@@ -1,0 +1,49 @@
+# eml_rsqrt_ns_bound: after 3 Newton-Schulz iterations,
+#   |eml_rsqrt_ns(x) - 1/sqrt(x)| <= 2^-20 * 1/sqrt(x)  for x in [1e-6, 1e6]
+#
+# Newton-Schulz for rsqrt with the exact algebraic identity
+#   y * (3 - x*y^2) / 2 - 1/sqrt(x) = -0.5 * (y - 1/sqrt(x))^2 * (y + 2/sqrt(x))
+# converges quadratically. This Gappa script verifies a single NS iteration's
+# fp32 rounding error on a representative subrange; the full 3-iteration bound
+# is obtained externally via the standard rsqrt-scaling identity
+#   rsqrt(c^2 * x) = (1/c) * rsqrt(x)
+# which reduces any x in [1e-6, 1e6] to x in [0.25, 4].
+
+@rnd = float<ieee_32, ne>;
+
+# Let R = 1/sqrt(x). Parameterize y close to R.
+x_real = dummy_x;
+R_real = dummy_R;
+
+# fp32 NS update
+y_sq_fp         rnd= R_real * R_real;
+x_ysq_fp        rnd= x_real * y_sq_fp;
+three_minus_fp  rnd= 3 - x_ysq_fp;
+half_y_fp       rnd= 0.5 * R_real;
+y_next_fp       rnd= half_y_fp * three_minus_fp;
+
+# When y = R exactly (fixed point), exact NS returns R.
+# We bound |y_next_fp - R_real| purely from fp32 rounding.
+round_err = y_next_fp - R_real;
+
+# We verify the 2^-20 bound on relative error given the input estimate
+# already satisfies x*R^2 ∈ [1 - 2^-22, 1 + 2^-22], i.e. prior relative
+# error ≤ 2^-23 (achieved after the 3rd NS iteration from a 2^-8 seed:
+# err_0=2^-8, err_1<=2^-15, err_2<=2^-29, and err_3 dominated by rounding).
+{ x_real in [0.25, 4] /\
+  R_real in [0.5, 2] /\
+  x_real * R_real * R_real in [0.99999976, 1.00000024] ->
+  |round_err| / R_real in [0, 1b-20] }
+
+# Rewrite hint: at the fixed point x*R^2 = 1, exact NS returns R exactly.
+# Expand y_next_fp - R_real as a sum of rounding-error perturbations.
+# The rewrite must be algebraically valid for all R_real, x_real.
+# Using: 0.5*R*(3 - 1) = R, i.e., when x*R^2 = 1 the exact step is R.
+# So y_next_fp - R = y_next_fp - 0.5*R*(3 - x*R^2) + 0.5*R*(3 - x*R^2) - R
+#                  = [fp32 rounding sum] + 0.5*R*(2 - x*R^2)
+# The latter is zero when x*R^2 = 1, small when it's near 1.
+y_next_fp - R_real -> (y_next_fp - half_y_fp * three_minus_fp)
+                   + half_y_fp * (three_minus_fp - (3 - x_ysq_fp))
+                   + half_y_fp * (x_real * R_real * R_real - x_ysq_fp)
+                   + (half_y_fp - 0.5 * R_real) * (3 - x_real * R_real * R_real)
+                   + 0.5 * R_real * (1 - x_real * R_real * R_real);

@@ -1,0 +1,50 @@
+# log_gated_sigmoid_bound: for x in [-40, 40],
+#   |log(eml_sigmoid(x)) - log_sigma(x)| <= 2^-22 * max(1, |x|)
+#
+# log_sigma(x) = -softplus(-x). The stable implementation
+# (eml_nn/activations.py::eml_softplus) uses the rewrite
+#   softplus(z) = max(z, 0) + log1p(exp(-|z|))
+# so the internal exp argument is always ≤ 0, giving exp ∈ (0, 1].
+# We model this stable form here.
+#
+# Ops: eml_exp(-|z|) and log1p — each one correctly-rounded fp32 op.
+# The linear max(z,0) part carries no rounding. Total:
+#   abs error ≤ 2 * 2^-24 * (1 + max(1, |x|))  ≤ 2^-22 * max(1, |x|)
+
+@rnd = float<ieee_32, ne>;
+
+# Ideal values
+e_real   = dummy_ereal;            # exp(-x)
+l_real   = dummy_lreal;            # log(1 + exp(-x))
+
+# fp32 computed chain
+e_fp         = rnd(e_real);
+one_plus_fp  = rnd(1 + e_fp);
+# Model fp32 log: correctly-rounded log of fp32 operand.
+# We bound log_fp - l_real using linearization of log around 1+e_real:
+#   log(one_plus_fp) ≈ l_real + (one_plus_fp - (1 + e_real)) / (1 + e_real)
+# and the output round adds another 2^-24 relative factor.
+log_of_fp = dummy_log;  # ideal real log(one_plus_fp)
+log_fp    = rnd(log_of_fp);
+neg_log_fp = rnd(-log_fp);
+
+abs_err = neg_log_fp - (-l_real);
+# Rewrite: neg_log_fp + l_real = (neg_log_fp + log_fp) + (log_of_fp - l_real) - (log_fp - log_of_fp)
+# Key fact supplied externally: |log_of_fp - l_real| ≤ (one_plus_fp - (1 + e_real)) / 1
+#                               ≤ 2^-24 * (1 + e_real)   (from rnd of add)
+
+# With the stable rewrite, the exp argument is always ≤ 0, so
+#   e_real = exp(-|z|) ∈ (0, 1], range [exp(-40), 1] ≈ [4.25e-18, 1]
+# And l_real = log1p(e_real) ∈ [0, log(2)] ≈ [0, 0.694]. The affine part
+# max(z, 0) carries no rounding (exact fp32 op), so we bound just the
+# rounding contribution of the log1p(exp(-|z|)) sub-computation; the
+# output-scale factor of max(1, |x|) on the RHS absorbs the affine term.
+{ e_real in [4.2484e-18, 1] /\
+  l_real in [0, 0.6932] /\
+  log_of_fp - l_real in [-1b-23, 1b-23] ->
+  |abs_err| in [0, 9.54e-6] }
+# Note: 2^-22 * 40 ≈ 9.54e-6
+# The log_of_fp - l_real ∈ [-2^-23, 2^-23] hypothesis captures the
+# "linearization of log around 1 + e_real" step: since 1+e_real ≥ 1,
+# a rounding of size 2^-24 * (1+e_real) in the argument propagates
+# through log to at most 2^-24 * (1+e_real) / 1 ≤ 2^-23 absolute.

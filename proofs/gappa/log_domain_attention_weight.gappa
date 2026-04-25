@@ -1,0 +1,23 @@
+# log_domain_attention_weight_bound: for logits L in [-40, 40]
+# and log_w = L - LSE(L), we have exp(log_w) in (0, 1] bit-exactly
+# in fp32 (no overflow possible). This is a RANGE bound.
+#
+# Key fact: LSE-normalization guarantees log_w <= 0, so exp(log_w) <= 1.
+# Moreover log_w >= L_min - L_max >= -80 (for L in [-40, 40]),
+# so exp(log_w) >= exp(-80) ≈ 1.8e-35 > 0 (smallest fp32 subnormal).
+
+@rnd = float<ieee_32, ne>;
+
+log_w_real = dummy_logw;                # ideal L - LSE(L), ∈ [-80, 0]
+w_real     = dummy_wreal;               # ideal exp(log_w_real)
+w_fp       = rnd(w_real);               # fp32 correctly-rounded exp
+
+{ log_w_real in [-80, 0] /\
+  w_real in [1.8048514e-35, 1] ->
+  w_fp in [0, 1] }
+# Output upper-bound 1 is bit-exact: since w_real ≤ 1 and fp32 rounding
+# of a number ≤ 1 cannot exceed 1 (+ 0.5 ulp at 1 = 1+2^-24, but 1 itself
+# is exactly representable so rnd(1) = 1, and values strictly below round
+# either down or up by at most one ulp below 1). More precisely, the fp32
+# value immediately above 1 is 1 + 2^-23, but since w_real ≤ 1 exactly,
+# rnd(w_real) ≤ 1. Lower bound 0 is trivial (no negative output).

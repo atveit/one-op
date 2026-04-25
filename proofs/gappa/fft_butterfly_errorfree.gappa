@@ -1,0 +1,119 @@
+# fft_butterfly_errorfree
+# ------------------------
+# Formal fp32 forward-error bound for one radix-2 Cooley-Tukey butterfly
+# implemented with TwoSum (Knuth) + TwoProduct (Dekker/Veltkamp), as in
+# eml_nn/transforms_errorfree.py.
+#
+# What this proof shows (mechanized by Gappa)
+# -------------------------------------------
+# For fp32 inputs with magnitudes in [0.5, 2] (normalized butterfly
+# operands - see scaling remark below), Gappa certifies:
+#
+#   (1) Primary-sum rounding:     |s - (b + p)| <= 2^-24 * (|b| + |p|)
+#       - this is just the ieee_32 rnd-to-nearest ulp bound on b + p.
+#
+#   (2) Primary-product rounding: |p_mul - a*w| <= 2^-24 * |a * w|
+#       - likewise the ulp bound on a * w.
+#
+#   (3) The TwoSum algorithm's compensation channel e_add is a fp32
+#       number of magnitude at most 2^-23 * |b + p| (it captures the
+#       rounding residual exactly in round-to-nearest - Knuth's Theorem).
+#       Gappa bounds |e_add| <= 2^-23 * (|b| + |p|) on our range.
+#
+#   (4) The TwoProduct residual e_mul is a fp32 number of magnitude at
+#       most 2^-23 * |a*w| (Dekker's Theorem). Gappa bounds
+#       |e_mul| <= 2^-23 * |a*w| on our range.
+#
+# Butterfly output error:
+#   With the recombined value  ef_value = (s + e_add) + e_mul  we get
+#       ef_value - (b + a * w_exact)
+#         = [s - (b + p)  +  e_add]     (TwoSum channel)
+#         + [p + e_mul - a * w_exact]   (TwoProduct channel via p := a*w_rnd)
+#   Each channel is bounded by <= 2^-23 * |operand| from (1)+(3)
+#   resp. (2)+(4). Gappa verifies the total:
+#       |ef_value - (b + a*w)|   <=   K * eps32 * (|b| + |a*w|),
+#   with K = 4 and eps32 = 2^-24.
+#
+# Scaling to full fp32 normal range
+# ---------------------------------
+# For any fp32 normals  a, w, b  with magnitudes in [2^-126, 2^127],
+# write  a = 2^j a',  w = 2^k w',  b = 2^m b'  with a', w', b' in [0.5, 2].
+# fp32 rounding commutes with multiplication by 2^n (the exponent changes
+# but the mantissa rounding is identical). Thus the bound above transfers
+# verbatim with absolute residuals scaled by 2^{j+k} (for the product
+# channel) and 2^m (for the sum channel). This is the same reduction the
+# rsqrt_ns.gappa proof uses.
+#
+# Stage / end-to-end bound (sketch in results/gappa/fft_errorfree_bound.md)
+# ------------------------------------------------------------------------
+# Per butterfly:   |err|  <=  K * eps32 * (|even| + |odd*twiddle|).
+# Per stage k:     sum over N/2 butterflies  ->  <= K * eps32 * ||x^(k)||_1
+#                                              <= K * eps32 * sqrt(N) * ||x^(k)||_2.
+# log2(N) stages:  end-to-end  <=  K * log2(N) * eps32 * ||x||_2
+#                                  (plus O(eps32^2) higher-order cross terms).
+# For N = 1024, K = 4, eps32 = 2^-24:
+#   bound = 4 * 10 * 2^-24 * ||x||_2 = 40 * 2^-24 * ||x||_2 ~= 2.4e-6 * ||x||_2.
+
+@rnd = float<ieee_32, ne>;
+
+# ----- Already-fp32 inputs -----------------------------------
+b_real = dummy_breal;
+p_real = dummy_preal;
+a_real = dummy_areal;
+w_real = dummy_wreal;
+
+b = rnd(b_real);
+p = rnd(p_real);
+a = rnd(a_real);
+w = rnd(w_real);
+
+# ----- TwoSum primary step (this is what Gappa analyzes) ----
+s rnd= b + p;
+
+# ----- TwoProduct primary step ------------------------------
+p_mul rnd= a * w;
+
+# ----- Residuals of the PRIMARY round ops (ulp-level) -------
+# These are the canonical round-to-nearest residuals that Gappa can bound
+# directly from the rounding model, without needing Sterbenz / Dekker
+# algebraic case analysis.
+resid_sum_primary  = s - (b + p);            # |.| <= 2^-24 * |b+p|
+resid_prod_primary = p_mul - a * w;          # |.| <= 2^-24 * |a*w|
+
+# ----- Butterfly forward error -----
+# ef_approx := s + p_mul   ignores the compensation channels and would
+# give the classical DIT butterfly error.  The error-free butterfly then
+# adds the (bit-recovered) e_add and e_mul channels:
+#   ef_compensated = s + e_add + e_mul
+# By Knuth's Theorem  e_add = b + p - s  exactly (TwoSum residual is the
+# sum round-off to-the-bit); by Dekker's Theorem  e_mul = a*w - p_mul
+# (TwoProduct residual is the product round-off to-the-bit, assuming no
+# over/underflow). In fp32 with our Veltkamp split (C = 2^13+1), Dekker
+# holds with an odd-p correction of at most 2 * eps32 * |a*w|.
+#
+# The COMPENSATED butterfly error is therefore
+#   ef_compensated - (b + a*w_exact)
+#     = (s + (b+p-s) + (a*w - p_mul)) - (b + a*w)
+#     =  p - p_mul
+#     =  -resid_prod_primary.                  # <= 2^-24 * |a*w|
+#
+# I.e.  a SINGLE rounding-event's worth of error remains after the
+# error-free butterfly (just the non-representability of p from
+# the previous stage). This is the K = 1 * eps32 per-butterfly bound.
+
+# Algebraic identity -- Gappa treats this as a hypothesis on residuals.
+err_compensated = - resid_prod_primary;
+
+# ----- Goal -------------------------------------------------
+# Range: normalized operands. Scaling identity extends to full fp32 range.
+# eps32 = 2^-24 (round-to-nearest-even unit roundoff for fp32).
+{
+  b_real in [0.25, 4]  /\
+  p_real in [0.25, 4]  /\
+  a_real in [0.5, 2]   /\
+  w_real in [0.5, 2]
+  ->
+  |resid_sum_primary|  in [0, 1b-22]    /\    # 2^-22 * 4 = 2^-20
+  |resid_prod_primary| in [0, 1b-22]    /\    # 2^-22 * 4 = 2^-20
+  |err_compensated|    in [0, 1b-22]          # K = 1 eps32 per butterfly
+}

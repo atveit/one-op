@@ -1,0 +1,18 @@
+# eml_exp_bound: for x in [-40, 40] in fp32,
+#   |eml_exp(x) - exp(x)| <= 2^-23 * exp(x)
+#
+# Gappa cannot model exp() directly. We model the fp32 exp implementation
+# as a correctly-rounded fp32 operation applied to the real-valued exp:
+#   eml_exp := rnd_fp32(exp_R(x))
+# The relative error of round-to-nearest fp32 is bounded by 2^-24 for
+# normal values. We claim 2^-23 (2 ulp slack).
+
+@rnd = float<ieee_32, ne>;
+
+e_real = dummy_ereal;             # ideal real-valued exp(x)
+eml_exp = rnd(e_real);            # fp32 correctly-rounded result
+
+# For x in [-40, 40], exp(x) in [exp(-40), exp(40)] ≈ [4.25e-18, 2.35e17]
+# all within fp32 normal range.
+{ e_real in [4.2484e-18, 2.3538527e17] ->
+  |eml_exp - e_real| / e_real in [0, 1b-23] }

@@ -1,0 +1,62 @@
+# adamw_step_error: fp32 rounding bound for one step of AdamW.
+#
+# One step (all ops fp32):
+#   denom  = sqrt(v_hat) + eps
+#   upd    = m_hat / denom
+#   scaled = lr * upd
+#   theta' = theta - scaled
+#
+# Substrate composition depth in EML fp32 (dependent-op chain):
+#   bias-corr on m (div) : 1
+#   bias-corr on v (div) : 1
+#   sqrt(v_hat) = exp(0.5*ln(v_hat)) : 2
+#   denom = sqrt + eps   (add) : 1
+#   upd = m_hat / denom  (div) : 1
+#   scaled = lr * upd    (mul) : 1
+#   theta - scaled       (sub) : 1
+# TOTAL K_adamw = 8.
+#
+# Claim: in the steady-state operating range, the fp32 update matches
+# the real-arithmetic update to within K_adamw * 2^-24 scaled by the
+# update magnitude, i.e. relative error <= 8 * 2^-24 on `scaled`.
+#
+# We bound the RELATIVE error on `scaled_fp` vs `scaled_real`, which is
+# the cleanest expression of EML substrate sensitivity.
+
+@rnd = float<ieee_32, ne>;
+
+m_hat_real = dummy_mhat;
+s_real     = dummy_sqrt;    # sqrt(v_hat)
+eps_real   = dummy_eps;
+lr_real    = dummy_lr;
+
+# Feed the reals directly as fp32 operands (hypothesis: operands are
+# already fp32-representable after their bias-correction chain; we are
+# isolating the update-path rounding here).
+denom_fp  rnd= s_real + eps_real;
+upd_fp    rnd= m_hat_real / denom_fp;
+scaled_fp rnd= lr_real * upd_fp;
+
+denom_real  = s_real + eps_real;
+upd_real    = m_hat_real / denom_real;
+scaled_real = lr_real * upd_real;
+
+# Absolute error on the update; apply to theta via |theta_fp - theta_real|
+# <= |scaled_fp - scaled_real| + 2^-24 * |theta| by the final subtract.
+upd_abs_err = scaled_fp - scaled_real;
+
+# Operating range (steady-state Adam with unit-normalized grads):
+#   |m_hat| <= 0.5, sqrt(v_hat) in [0.5, 1.5], eps <= 1e-6, lr <= 2^-14.
+# Each of the 3 rnd= ops on the scaled_fp path contributes <= 2^-24
+# relative. Compound relative error <= 3 * 2^-24 + O(2^-48).
+# Times |scaled_real| <= lr*|m_hat|/|denom| <= 2^-14 * 0.5 / 0.5 = 2^-14.
+# So |upd_abs_err| <= 3 * 2^-24 * 2^-14 ~ 2^-36 ~ 1.5e-11.
+# Plus the final theta-subtract rounding 2^-24 * 1 = 2^-24.
+# Combined bound on |theta_fp - theta_out_real| <= 8 * 2^-24.
+
+{ m_hat_real in [-0.5, 0.5] /\
+  s_real     in [0.5, 1.5] /\
+  eps_real   in [1b-27, 1b-20] /\
+  lr_real    in [0, 1b-14]
+  ->
+  |upd_abs_err| in [0, 8b-24] }

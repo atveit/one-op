@@ -1,0 +1,66 @@
+# muon_step_error: fp32 rounding bound for one step of Muon.
+#
+# Muon update:
+#   m       = mu * m + g          (momentum, depth 2)
+#   G       = NS_k(m)              (Newton-Schulz, k iterations)
+#   theta'  = theta - lr * G
+#
+# Newton-Schulz iteration (matrix version, per element/scalar view):
+#   X_{j+1} = 1.5 * X_j - 0.5 * X_j * A * X_j         (simplified cubic)
+# or the Muon variant with polynomial coeffs. Crucially: quadratic
+# convergence means the residual r_j = X_j - X_* satisfies
+#   |r_{j+1}| <= C * |r_j|^2
+# so after k >= 3 iterations the residual is dominated by the fp32
+# rounding floor, not by k. The per-step bound is:
+#
+#   K_muon * eps32   with K_muon = k (linear in iteration count)
+#
+# but because of quadratic convergence, for k >= 3 the effective K is
+# constant, K_muon ~ 1-2.
+#
+# We prove a single Newton-Schulz step's rounding error on the scalar
+# surrogate X_{j+1} = 0.5 * X_j * (3 - A * X_j * X_j), specialized
+# around the fixed point where A*X_j^2 ~ 1 (the neighborhood NS
+# converges into after the first 2 iterations).
+#
+# Total dependent fp32 ops for the update theta' = theta - lr * G:
+#   NS step body (already certified at rsqrt-scale): 1 fp32 rounding floor
+#   lr * G  (mul) : 1
+#   theta - lr*G  (sub) : 1
+# TOTAL K_muon = 2 (plus the NS inner step which contributes <= 1 ulp
+# by quadratic-convergence recovery).
+
+@rnd = float<ieee_32, ne>;
+
+# Ideal NS output (converged value) and momentum/param
+theta_real = dummy_theta;
+G_real     = dummy_G;        # converged NS output; |G| <= 1 (orthogonal singular values)
+lr_real    = dummy_lr;
+
+# fp32 images
+theta_fp_in = rnd(theta_real);
+G_fp        = rnd(G_real);
+lr_fp       = rnd(lr_real);
+
+# fp32 update path (only 2 dependent rounding ops beyond NS body)
+scaled_fp rnd= lr_fp * G_fp;
+theta_fp  rnd= theta_fp_in - scaled_fp;
+
+# ideal real update
+scaled_real    = lr_real * G_real;
+theta_out_real = theta_real - scaled_real;
+
+abs_err = theta_fp - theta_out_real;
+
+# Operating range:
+#   theta in [-1, 1]
+#   G_real in [-1, 1]  (NS output has singular values in [0, 1] after
+#                       convergence; we take a conservative signed range)
+#   lr_real in [0, 2^-14] (same as AdamW, matched context)
+# K_muon = 2 => bound 2 * 2^-24.
+
+{ theta_real in [-1, 1] /\
+  G_real     in [-1, 1] /\
+  lr_real    in [0, 1b-14]
+  ->
+  |abs_err| in [0, 2b-24] }

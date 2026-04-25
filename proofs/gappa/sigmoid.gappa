@@ -1,0 +1,35 @@
+# eml_sigmoid_bound: for x in [-40, 40],
+#   |eml_sigmoid(x) - sigma(x)| <= 2^-20
+#
+# sigma(x) = 1 / (1 + exp(-x)). EML compiles this to ~4 fp32 ops:
+#   (1) eml_exp(-x)  -- one correctly-rounded fp32 exp
+#   (2) add 1
+#   (3) reciprocal (eml_recip via exp(-log(y)) ~ one correctly-rounded op)
+# Each adds at most 2^-24 relative error. Composed: ≤ 4 * 2^-24 ≈ 2^-22
+# absolute error. We claim the looser bound 2^-20.
+
+@rnd = float<ieee_32, ne>;
+
+# Ideal real-valued exp(-x) for x in [-40, 40]
+e_real = dummy_ereal;
+
+# fp32 exp (correctly rounded)
+e_fp = rnd(e_real);
+
+# 1 + exp(-x) in real / fp32
+denom_real = 1 + e_real;
+denom_fp = rnd(1 + e_fp);
+
+# Ideal sigma = 1 / denom_real
+sig_real = 1 / denom_real;
+
+# fp32 reciprocal (correctly rounded)
+recip_fp = rnd(1 / denom_fp);
+
+abs_err = recip_fp - sig_real;
+
+# Ranges for x ∈ [-40, 40]:
+#   e_real = exp(-x) ∈ [exp(-40), exp(40)] ≈ [4.25e-18, 2.35e+17]
+#   denom_real ≥ 1, so denom_fp ≥ 1 (no catastrophic rounding at the '+1')
+{ e_real in [4.2484e-18, 2.3538527e17] ->
+  |abs_err| in [0, 1b-20] }
