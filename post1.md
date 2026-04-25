@@ -45,7 +45,7 @@ In this post, we apply this to the frontier of AI:
 
 Andrzej Odrzywołek's paper established that the pair $\{eml, 1\}$ is functionally complete for univariate elementary functions. 
 
-We have extended this to the tensor-valued vocabulary of deep learning. Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
+Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
 
 ### The Core Math: Reconstructing Primitives
 To show how this reduction works in practice, we can define the operator in Python and then use it to \"rebuild\" the natural logarithm and the exponential function from scratch.
@@ -105,7 +105,7 @@ def eml_layer_norm(x, g, b, eps=1e-5):
 ### 2.2 EML-native Attention (Min-Plus Dual-Space)
 Standard Softmax attention is \"multiplicatively fragile\" because the exponential sum in the denominator can easily underflow or overflow. By shifting into the **Min-Plus (Log-domain)** dual space, we replace fragile division with stable subtraction.
 
-> **Note:** **Min-Plus Algebra** (or Tropical math) is a system where we do calculations in "log-space." In this world, multiplication becomes addition, and division becomes subtraction. This makes the attention mechanism NaN-proof even at scale.
+> **Note:** **Min-Plus Algebra** (or Tropical math) is a system where we do calculations in \"log-space.\" In this world, multiplication becomes addition, and division becomes subtraction. This makes the attention mechanism NaN-proof even at scale.
 
 ```python
 def eml_attention(q, k, v, mask):
@@ -173,12 +173,12 @@ Success: `pico_gpt2_equivalence` verified. Zero sorry goals.
 We maintain a rigorous table of evidence across multiple formal languages to ensure every claim is backed by machine-checked logic.
 
 ### Table of Evidence
-| Layer | Tool | Status | Utility |
+| Layer | Tool | Status | GitHub Evidence |
 | :--- | :--- | :--- | :--- |
-| **Mathematics** | 🧮 Lean 4 | **Verified** | Functional correctness over $\mathbb{R}$ for the full GPT-2 stack. |
-| **Numerics** | 🛡️ Gappa | **Verified** | Relative error bounds strictly within FP32 precision. |
-| **Concurrency** | ⏱️ TLA+ | **Verified** | Proves the KV-cache allocator never deadlocks. |
-| **Integrity** | 🐍 SymPy | **Verified** | Mechanically checks the gradient (derivative) chain. |
+| **Mathematics** | 🧮 Lean 4 | **Verified** | [`lean/EmlNN/`](https://github.com/atveit/one-op/tree/main/lean/EmlNN) |
+| **Numerics** | 🛡️ Gappa | **Verified** | [`proofs/gappa/`](https://github.com/atveit/one-op/tree/main/proofs/gappa) |
+| **Concurrency** | ⏱️ TLA+ | **Verified** | [`proofs/tla+/`](https://github.com/atveit/one-op/tree/main/proofs/tla+) |
+| **Integrity** | 🐍 SymPy | **Verified** | [`scripts/sympy/`](https://github.com/atveit/one-op/tree/main/scripts/sympy) |
 
 ---
 
