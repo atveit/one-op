@@ -7,7 +7,9 @@ thumbnail: ./eml-hero.png
 
 ![Exp minus Log Hero](./eml-hero.png)
 
-> **⚠️ Disclaimer:** This is a technical blog post exploring very recent research (April 2026). While every claim here is backed by machine-checked formal proofs in Lean 4 and Gappa, this represents a "living" research direction rather than a final peer-reviewed journal publication. We encourage community scrutiny of the [accompanying codebase](https://github.com/atveit/one-op).
+<div style="background-color: #f0f7ff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px;">
+
+> **⚠️ Disclaimer:** This is a technical blog post exploring very recent research (April 2026). While every claim here is backed by machine-checked formal proofs in Lean 4 and Gappa, this represents a \"living\" research direction rather than a final peer-reviewed journal publication. We encourage community scrutiny of the [accompanying codebase](https://github.com/atveit/one-op).
 
 ## TL;DR: Deep Learning = Exp minus Log
 
@@ -25,6 +27,8 @@ In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single 
 | **Accuracy** | 1.71 Final Loss (GPT-2) | **1.69 Final Loss (GPT-2)** |
 | **Precision** | Standard FP32 LayerNorm | **6.2x precision tightening (Newton-Schulz)** |
 
+</div>
+
 👉 **View the full codebase and proofs on GitHub: [atveit/one-op](https://github.com/atveit/one-op)**
 
 ---
@@ -34,6 +38,40 @@ In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single 
 Andrzej Odrzywołek's paper [**\"All elementary functions from a single binary operator\"** (arXiv:2603.21852)](https://arxiv.org/abs/2603.21852) established that the pair $\{eml, 1\}$ is the \"NAND gate\" for univariate elementary functions. 
 
 We have extended this to the tensor-valued vocabulary of deep learning. Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
+
+### The Core Math: Reconstructing Primitives
+Here is how the continuous Sheffer primitive maps to standard operations. Each of these identities is formally verified in Lean 4.
+
+<details>
+<summary><strong>View Python Mapping & Lean 4 Proofs (Basic)</strong></summary>
+
+```python
+import numpy as np
+
+def eml(x, y):
+    """The continuous Sheffer primitive: Exp Minus Log."""
+    return np.exp(x) - np.log(y)
+
+# exp(x) is depth 1
+def eml_exp(x):
+    return eml(x, 1.0)
+
+# ln(z) is a depth-3 circuit: eml(1, eml(eml(1, z), 1))
+def eml_ln(z):
+    return eml(1.0, eml(eml(1.0, z), 1.0))
+```
+
+```lean
+/-- exp(x) = eml x 1 -/
+theorem eml_exp (x : ℝ) : eml x 1 = Real.exp x := by
+  simp [eml, Real.log_one]
+
+/-- ln z = eml 1 (eml (eml 1 z) 1) for z > 0 -/
+theorem eml_ln (z : ℝ) (hz : 0 < z) :
+    Real.log z = eml 1 (eml (eml 1 z) 1) := by
+  simp [eml, Real.log_one, Real.log_exp]
+```
+</details>
 
 ---
 
