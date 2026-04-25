@@ -97,6 +97,7 @@ theorem log_domain_attention_eq_attention {n d : ℕ} [NeZero n] :
 
 
 
+
 ### 2.4 Grokking with EML
 
 Grokking is a mysterious phenomenon where a model suddenly "clicks" and generalizes to 100% validation accuracy long after overfitting the training set. It has been hypothesized that numerical behaviors in the Softmax layer are a primary driver of this effect.
@@ -111,7 +112,7 @@ While the transformation to `exp - ln` is straightforward for activations, we em
 <details>
 <summary><strong>Snippet 1: The EML "SiLU" (Straightforward Math)</strong></summary>
 
-Standard SiLU is $x \cdot \sigma(x)$. We rewrite it as a composition of our $eml(x, 1)$ primitive.
+Standard SiLU is x * σ(x). We rewrite it as a composition of our eml(x, 1) primitive.
 ```python
 def eml_silu(x):
     # sigmoid(x) = 1 / (1 + exp(-x))
@@ -123,7 +124,7 @@ def eml_silu(x):
 <details>
 <summary><strong>Snippet 2: RMSNorm via Newton-Schulz (Numerical Trick)</strong></summary>
 
-Standard RMSNorm relies on a fragile $1/\sqrt{x}$ operation. To maintain "Zero-Sorry" formal verifiability, we avoid the division operator entirely using **Newton-Schulz iterative refinement**.
+Standard RMSNorm relies on a fragile 1/sqrt(x) operation. To maintain "Zero-Sorry" formal verifiability, we avoid the division operator entirely using **Newton-Schulz iterative refinement**.
 ```python
 def eml_rsqrt_ns(x, iterations=3):
     # Start with a seed, then refine using only * and +
@@ -134,26 +135,26 @@ def eml_rsqrt_ns(x, iterations=3):
 ```
 </details>
 
-#### Results & Performance Comparison
-The EML-native model achieves **perfect functional parity**, "clicking" into generalization just like the standard MLX baseline.
+#### Results & Performance Comparison (1,000 Epochs)
+The EML-native model achieves **perfect functional parity**, but we observe a significant **Grokking Delay** compared to the standard MLX baseline.
 
 | Implementation | Epochs to Grok | Time to Grok (M3 Ultra) |
 | :--- | :--- | :--- |
 | **Standard MLX** | ~140 | **~14 seconds** |
-| **EML MLX** | ~140 | **~19 seconds** |
+| **EML MLX** | **~480** | **~63 seconds** |
 
 ![Grokking Comparison: Standard vs EML](./grokking_comparison.png)
 
-#### Analysis: Validation Accuracy Fluctuations
-A striking feature of the EML training curve is the **massive fluctuation in validation accuracy** compared to the smoother standard baseline. 
+#### Analysis: The Grokking Delay & Fluctuations
+The EML variant reaches the same 100% accuracy plateau, but the phase transition is delayed by ~3.4x in terms of training steps.
 
-**Why does this happen?**
-1. **Nesting Depth:** Constructing complex operations like `silu` or `rsqrt` from a single `eml` operator increases the effective "depth" of the floating-point computation. Each nested `exp` and `log` call introduces a small epsilon of rounding error.
-2. **Min-Plus Sensitivity:** In the Log-domain (Min-Plus space), we replace division with subtraction. When logits are large, we subtract two very large numbers to get a small difference—this is the classic "catastrophic cancellation" problem in floating-point math, exacerbated by the depth of the EML stack.
+**Why the delay?**
+1. **Precision Accumulation:** Constructing complex operations from a single `eml` operator increases the effective "depth" of the computation. Small errors in gradient estimation propagate through the nested `exp` and `log` calls, essentially adding a "numerical friction" that slows down the alignment of weights required for generalization.
+2. **Min-Plus Gradient Smoothness:** In the Log-domain (Min-Plus space), the gradient dynamics are subtly different. While functionally equivalent over Real numbers, the floating-point gradients through a depth-10 EML tree are "noisier" than a single fused CUDA kernel, leading to the observed jagged validation accuracy before the model finally "clicks."
 
 **Future Mitigation:**
-- **Step B (Practical Refinement):** Implementing hybrid kernels that use EML for verification but "go back" to higher-precision fused operations for the gradient steps.
-- **Error-Free Summation:** Utilizing techniques like `Kahan Summation` or `TwoSum` within the EML accumulation loops to preserve the small-signal information during large-logit subtractions.
+- **Kahan Summation:** Integrating error-free accumulation within the EML loops to preserve high-frequency signal during large-logit subtractions.
+- **Verification-only EML:** Proving the identity in EML but using fused kernels for the actual training passes (Step B).
 
 ---
 ## 3. The "Zero-Sorry" Verification Stack
