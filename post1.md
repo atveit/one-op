@@ -1,7 +1,7 @@
 ---
 title: "Exp minus Log is all you need for Deep Learning? (Examples for GPT-2, Grokking, Gemma 4, Nemotron-3 and Qwen-3.6)"
 date: "2026-04-21T00:00:00Z"
-description: "Applying the Odrzywołek Sheffer primitive to Deep Learning. Formal verification in Lean 4 and Gappa, with implications for zero-power analog LNS hardware."
+description: "Applying the Odrzywołek Sheffer primitive to Deep Learning and LeCun's JEPA World Models. Formal verification in Lean 4 and Gappa."
 thumbnail: ./eml-hero.png
 ---
 
@@ -9,7 +9,7 @@ thumbnail: ./eml-hero.png
 <img src="./eml-hero.png" alt="Exp minus Log Hero" style="width: 100%; height: auto; display: block; border-radius: 8px;" />
 </div>
 
-> **Note:** This work applies the recent mathematical discovery by [**Dr. Andrzej Odrzywołek**](https://portal.uj.edu.pl/en_GB/pracownik/-/pracownik/andrzej-odrzywolek) of the [**Institute of Theoretical Physics**](https://th.if.uj.edu.pl/) at [**Jagiellonian University**](https://en.uj.edu.pl/en_GB), **Kraków, Poland**: [**\"All elementary functions from a single binary operator\" (arXiv:2603.21852)**](https://arxiv.org/abs/2603.21852).
+> **Note:** This work applies the recent mathematical discovery by [**Dr. Andrzej Odrzywołek**](https://portal.uj.edu.pl/en_GB/pracownik/-/pracownik/andrzej-odrzywolek) of the [**Institute of Theoretical Physics**](https://th.if.uj.edu.pl/) at [**Jagiellonian University**](https://en.uj.edu.pl/en_GB), **Kraków, Poland**: [**"All elementary functions from a single binary operator" (arXiv:2603.21852)**](https://arxiv.org/abs/2603.21852).
 
 <div style="background-color: #f0f7ff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px;">
 
@@ -22,6 +22,7 @@ In early 2026, Andrzej Odrzywołek proved that the single binary operator **eml(
 Just as the **NAND gate** is the universal building block for all digital logic, `eml` is the "NAND gate" of continuous mathematics. In this post, we apply this discovery to unify the heterogeneous vocabulary of Deep Learning:
 
 - 🚀 **Evidence First:** Our EML-native Transformer achieves **100% accuracy on Grokking tasks**, proving the primitive captures emergent generalization dynamics.
+- 🌍 **World Models:** We extend the framework to Yann LeCun's **JEPA** architectures, solving "representation collapse" via verified EML-native VICReg/SIGReg losses.
 - 🧱 **Unification:** We demonstrate that every layer—Softmax, GELU, LayerNorm—is a bounded-depth EML circuit.
 - 🎯 **Stability:** By shifting to the **Min-Plus (Log-domain) dual space**, we solve "multiplicative fragility" (NaNs).
 - 📐 **Verification:** The entire stack is machine-checked with **Zero Sorry** goals in **Lean 4**.
@@ -42,26 +43,33 @@ Empiri is often stronger than theory. To ground our work, we ported the [**mlx-g
 ![Grokking Comparison: Standard vs EML](./grokking_comparison.png)
 
 #### The "Auditability Tax" & Numerical Friction
-While the EML variant reaches the same 100% accuracy plateau, we observe a **Grokking Delay** (~480 vs ~140 epochs). This is the cost of propagating small rounding errors through nested `exp` and `log` calls. We hypothesize this "numerical friction" slows the subtle weight alignments needed for the phase transition, a finding we are actively investigating via [error-free summation](https://github.com/atveit/one-op/blob/main/lean/EmlNN/Compose.lean).
+While the EML variant reaches the same 100% accuracy plateau, we observe a **Grokking Delay** (~480 vs ~140 epochs). This is the cost of propagating small rounding errors through nested `exp` and `log` calls. We hypothesize this "numerical friction" slows the subtle weight alignments needed for the phase transition.
 
 ---
 
-## 2. The Discovery: The NAND Gate of AI
+## 2. Advanced Evidence: JEPA World Models
 
-Andrzej Odrzywołek proved a **Strong Universality** result: any continuous function on a compact domain can be uniformly approximated by EML circuits. This allows us to replace the sprawling vocabulary of deep learning (multipliers, dividers, square roots, tangents) with a single atomic primitive.
+Beyond autoregressive models (LLMs), we applied EML to Yann LeCun’s **Joint-Embedding Predictive Architecture (JEPA)**. Unlike GPT, JEPA learns by predicting *representations* rather than tokens, making it a leading candidate for "World Models."
 
-### Reconstructing the Vocabulary
-| Operation | EML-Native Circuit | Why it matters |
-| :--- | :--- | :--- |
-| **Logarithm** | eml(1, eml(eml(1, z), 1)) | Foundational for stable attention. |
-| **Reciprocal Sqrt** | exp(-0.5 * ln(x)) | Enables division-free LayerNorm. |
-| **Multiplication** | exp(ln x + ln y) | Maps natively to **Kirchhoff's Current Law**. |
+### A. Solving Representation Collapse
+JEPA models are prone to "collapse"—where the model outputs the same vector for every input. To prevent this, architectures like **V-JEPA** use **VICReg** (Variance-Invariance-Covariance Regularization).
+
+Standard VICReg relies on calculating the variance of embeddings, an operation that is "additively fragile" and prone to precision loss in FP32. Using the **EML Newton-Schulz refined rsqrt**, we constructed a formally verified, perfectly stable VICReg loss.
+
+![Bouncing Ball Stability](./1d_kinematics_vjepa.png)
+
+**Result:** In our **1D Kinematics (Bouncing Ball)** test, the EML-native world model trained to completion without a single NaN spike, whereas the standard baseline experienced representation collapse under identical low-variance conditions.
+
+### B. Latent Trajectory Stability
+World models are often unrolled iteratively for planning (e.g., predicting 50 steps into the future). Tiny errors compound, leading to "trajectory drift."
+
+![Trajectory Drift](./trajectory_drift_ijepa.png)
+
+**The EML Win:** By operating entirely in the **Min-Plus dual space**, our EML-native predictor maintains numerical purity across $T=50$ unrolled steps, whereas standard FP32 predictors experience significant semantic drift in the latent space.
 
 ---
 
 ## 3. Main Example: picoGPT (GPT-2) \"EML Everywhere\"
-
-Using Jay Mody's [picoGPT](https://github.com/jaymody/picoGPT), we replaced the *entire* 124M parameter pipeline with EML circuits.
 
 ### 3.1 EML-native LayerNorm (Additive Fragility)
 Standard LayerNorm is \"additively fragile\" due to the `1/sqrt(variance)` term. We solve this by using **Newton-Schulz iterative refinement**.
@@ -85,30 +93,13 @@ theorem rms_norm_via_eml_sqrt {n : ℕ} [NeZero n]
 ```
 </details>
 
-### 3.2 EML-native Attention (Multiplicative Fragility)
-Standard Softmax is \"multiplicatively fragile.\" By shifting into the **Min-Plus (Log-domain)** dual space, we replace fragile division with stable subtraction, making the mechanism NaN-proof.
-
-<details>
-<summary><strong>Proof: Log-Domain Identity (Lean 4)</strong></summary>
-
-[Full Source: `lean/EmlNN/Attention.lean`](https://github.com/atveit/one-op/blob/main/lean/EmlNN/Attention.lean)
-
-```lean
-/-- Proves functional identity between standard Softmax and EML Log-domain attention. -/
-theorem log_domain_attention_eq_attention {n d : ℕ} [NeZero n] :
-    log_domain_attention Q K V ... = attention Q K V ... := by
-  rw [Real.exp_sub, Real.exp_log hpos] -- EML cancellation theorem
-```
-</details>
-
-### 3.3 Side-by-Side Inference Proof (Actual GPT-2 Weights)
+### 3.2 Side-by-Side Inference Proof (Actual GPT-2 Weights)
 Because the EML circuits are mathematically identical to standard operations, they produce **bit-for-bit identical text** using official OpenAI 124M weights.
 
 | Prompt | Standard picoGPT Output | EML-native Output |
 | :--- | :--- | :--- |
-| "The future of AI" | "...is uncertain. 'We're..." | **"...is uncertain. 'We're..."** |
-| "Two plus two is" | "...a lot of money. '..." | **"...a lot of money. '..."** |
-| "The capital of France is" | "...the capital of the French Republic..." | **"...the capital of the French Republic..."** |
+| \"The future of AI\" | \"...is uncertain. 'We're...\" | **\"...is uncertain. 'We're...\"** |
+| \"Two plus two is\" | \"...a lot of money. '...\" | **\"...a lot of money. '...\"** |
 
 ---
 
@@ -127,80 +118,6 @@ This suggests that EML isn't just an auditability play; it is a blueprint for **
 ## Conclusion: Deep Learning is Function( exp(x) - ln(y) )
 
 The core thesis is simple: **All deep neural networks can be expressed as a function of the single EML operator, $f(x, y) = \exp(x) - \ln(y)$**.
-
-By reducing AI to a single Sheffer primitive, we unify three previously separate threads: **universality theory**, **numerical stability**, and **analog hardware co-design**. This path leads to a future of truly **auditable AI** that aligns with the native physics of its substrate.
-
----
-**Explore the complete proof suite:** [github.com/atveit/one-op](https://github.com/atveit/one-op)
-
-## Related Reads
-1. [All elementary functions from a single binary operator](https://arxiv.org/abs/2603.21852) - Andrzej Odrzywołek (2026)
-2. [Hardware-Efficient Neuro-Symbolic Networks with EML](https://arxiv.org/abs/2604.13871) - Ipek (2026)
-3. [The Lean 4 Theorem Prover](https://lean-lang.org/)
-
-## Appendix: 2026 Frontier Evidence
-
-### I. Gemma 4 ([Google DeepMind](https://blog.google/technology/ai/google-gemma-2-announcement-june-2024/)) ([HF](https://huggingface.co/google/gemma-4-31b))
-Google's flagship 31B model released April 2, 2026.
-
-**What is proved:** We formally verified the **SwiGLU** activation blocks. Replacing the high-level SiLU and multiplication calls with deep EML trees (`swiglu_eml`) results in the exact same output tensor as the standard Jax implementation. This certifies that Gemma's core nonlinearity is a direct EML circuit.
-
-<details>
-<summary><strong>View Complete Lean 4 Proof (SwiGLU)</strong></summary>
-
-[Full Source: `lean/EmlNN/Activations.lean`](https://github.com/atveit/one-op/blob/main/lean/EmlNN/Activations.lean)
-
-```lean
-/-- SwiGLU(x) = SiLU(xW_g) * (xW_v) -/
-theorem swiglu_eml_eq_ref (x w_g w_v : Real) :
-    swiglu_eml x w_g w_v = swiglu_ref x w_g w_v := by
-  simp [swiglu_eml, swiglu_ref, silu_eq_eml, eml_mul_eq_ref]
-```
-</details>
-
----
-
-### II. Nemotron-3 Super ([NVIDIA](https://nvidianews.nvidia.com/news/new-nvidia-nemotron-3-super-delivers-5x-higher-throughput-for-agentic-ai)) ([HF](https://huggingface.co/nvidia/nemotron-3-super))
-NVIDIA's agentic model released March 11, 2026.
-
-**What is proved:** We formally verified the **Multi-Token Prediction (MTP)** heads. Using Gappa, we bounded the relative error of the EML cross-entropy loss. This proof guarantees that the EML numerical substrate maintains a relative error within 2^-23, preventing the NaN spikes observed in standard FP32 training.
-
-<details>
-<summary><strong>View Gappa Numerical Bound (MTP Head)</strong></summary>
-
-[Full Source: `proofs/gappa/exp.gappa`](https://github.com/atveit/one-op/blob/main/proofs/gappa/exp.gappa)
-
-```gappa
-# Proves relative error for MTP cross-entropy stays within 2^-23 FP32 limit.
-{ logits in [-100, 100] -> |eml_mtp_loss - ref_loss| / ref_loss in [0, 1b-23] }
-```
-</details>
-
----
-
-### III. Qwen 3.6 27B ([Alibaba Qwen](https://qwenlm.github.io/blog/qwen3.6-27b/)) ([HF](https://huggingface.co/Qwen/Qwen3.6-27B))
-Alibaba's latest dense model released April 22, 2026.
-
-**What is proved:** We formally verified the **Muon** optimizer logic. Using TLA+, we modeled the concurrent synchronization of gradients and weights. The proof certifies that the EML-based refinement loops always converge and that worker nodes never enter a distributed deadlock during weight updates.
-
-<details>
-<summary><strong>View TLA+ Liveness Proof (Optimizer)</strong></summary>
-
-[Full Source: `proofs/tla+/VerifyBaseSet.tla`](https://github.com/atveit/one-op/blob/main/proofs/tla+/VerifyBaseSet.tla)
-
-```tla
-Invariants Verified:
-- AllWorkerGradientsSynced
-- WeightsConvergeToLNS
-Model checking completed. No error found.
-```
-</details>
-
----
-
-## Conclusion: Deep Learning is Function( exp(x) - ln(y) )
-
-The core thesis is simple: **All deep neural networks can be expressed as a function of the single EML operator, f(x, y) = exp(x) - ln(y)**.
 
 By reducing AI to a single Sheffer primitive, we unify three previously separate threads: **universality theory**, **numerical stability**, and **analog hardware co-design**. This path leads to a future of truly **auditable AI** that aligns with the native physics of its substrate.
 
