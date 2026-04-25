@@ -120,6 +120,43 @@ To prove this isn't just theoretical, we ran three standard prompts through both
 
 Grokking is a phase transition where a model suddenly generalizes to 100% accuracy long after overfitting. We ported the [**mlx-grokking**](https://github.com/stockeh/mlx-grokking) reference to the EML framework for a **~550k parameter** model.
 
+👉 **View the EML-Grokking code: [one-op/eml-mlx-grokking](https://github.com/atveit/one-op/tree/main/eml-mlx-grokking)**
+
+#### Detailed Code Changes: Standard vs. EML
+The port involved replacing standard Apple MLX primitives with EML-native duals. Here are the key structural shifts:
+
+| Feature | Standard MLX (`reference/models.py`) | EML-native Port (`models_eml.py`) |
+| :--- | :--- | :--- |
+| **RMSNorm** | `nn.RMSNorm(dim)` | `eml_rms_norm(x, self.weight)` |
+| **SiLU** | `nn.silu(logits)` | `eml_silu(logits)` |
+| **Attention** | `mx.fast.scaled_dot_product_attention` | **Min-Plus Stable Attention** |
+
+<details>
+<summary><strong>Snippet 1: Replacing SiLU with EML Trees</strong></summary>
+
+Standard SiLU is $x \cdot \sigma(x)$. We rewrite it as a composition of our atomic primitives.
+```python
+def eml_silu(x):
+    # sigmoid(x) = 1 / (1 + exp(-x))
+    # EML transformation: exp(-x) -> eml(-x, 1)
+    sig = 1.0 / (1.0 + eml(-x, 1.0))
+    return x * sig
+```
+</details>
+
+<details>
+<summary><strong>Snippet 2: Moving Attention to the Log-Domain (Min-Plus)</strong></summary>
+
+We bypass the fragile `Softmax` division entirely by calculating weights in the log-domain.
+```python
+# 1. Log-Sum-Exp subtraction instead of Softmax division
+lse = mx.logsumexp(logits, axis=-1, keepdims=True)
+# 2. exp(logits - lse) is the stable weights
+weights = mx.exp(logits - lse)
+output = (weights @ values)
+```
+</details>
+
 #### Results & Performance (1,000 Epochs)
 The EML model achieves **perfect functional parity**, but we observe a **Grokking Delay** (Numerical Friction).
 
@@ -130,7 +167,12 @@ The EML model achieves **perfect functional parity**, but we observe a **Grokkin
 
 ![Grokking Comparison: Standard vs EML](./grokking_comparison.png)
 
-This delay is the \"auditability tax\"—the cost of propagating small rounding errors through the nested EML stack.
+#### Analysis: The Grokking Delay & Fluctuations
+The EML variant reaches the same 100% accuracy plateau, but the phase transition is delayed by ~3.4x.
+
+**Why the delay?**
+1. **Precision Accumulation:** Constructing complex operations from a single `eml` operator increases the effective \"depth\" of the computation. Small errors in gradient estimation propagate through the nested `exp` and `log` calls, adding \"numerical friction\" that slows down the alignment of weights.
+2. **Min-Plus Sensitivity:** In the Log-domain, we replace division with subtraction. When logits are large, we subtract two very large numbers to get a small difference—this is the classic \"catastrophic cancellation\" problem in floating-point math, exacerbated by the depth of the EML stack.
 
 ---
 
