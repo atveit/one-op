@@ -98,6 +98,7 @@ theorem log_domain_attention_eq_attention {n d : ℕ} [NeZero n] :
 
 
 
+
 ### 2.4 Grokking with EML
 
 Grokking is a mysterious phenomenon where a model suddenly "clicks" and generalizes to 100% validation accuracy long after overfitting the training set. It has been hypothesized that numerical behaviors in the Softmax layer are a primary driver of this effect.
@@ -106,7 +107,16 @@ To test this, we ported the [**mlx-grokking**](https://github.com/stockeh/mlx-gr
 
 👉 **View the EML-Grokking code: [one-op/eml-mlx-grokking](https://github.com/atveit/one-op/tree/main/eml-mlx-grokking)**
 
-#### The Code: From Standard to EML-Native ( ~550k Params )
+#### The Transformation: Standard to EML-Native ( ~550k Params )
+We replaced all primary arithmetic operations with the single Sheffer primitive:
+
+| Component | Standard Implementation | EML-native Replacement |
+| :--- | :--- | :--- |
+| **Normalization** | `nn.RMSNorm` | **`eml_rms_norm`** (Newton-Schulz) |
+| **Activations** | `nn.silu` | **`eml_silu`** (Depth-bounded tree) |
+| **Attention** | `mx.fast.sdpa` | **`log_domain_attention`** (Min-Plus space) |
+
+#### Numerical Tricks
 While the transformation to `exp - ln` is straightforward for activations, we employed advanced numerical tricks to maintain the precision required for grokking:
 
 <details>
