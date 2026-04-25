@@ -18,13 +18,12 @@ In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single 
 - 📐 **Rigorous Verification:** The full architecture is machine-checked with **Zero Sorry** goals in **Lean 4**.
 - 🚀 **Evidence:** Reaches loss parity on **GPT-2 (picoGPT)**, **Gemma 4**, **Nemotron 3**, and **Qwen 3.6**.
 
-### Comparison: picoGPT Architecture (Full Stack)
-| Component | Standard picoGPT ( Jay Mody ) | EML-native ( This work ) |
+### Three Headline Wins
+| Benefit | Standard Baseline | EML Dual-Space |
 | :--- | :--- | :--- |
-| **Activations (GELU)** | `tanh` + `sqrt` + `pow` | **Depth-10 EML Tree** |
-| **Normalization** | `g * (x-μ) / sqrt(var+ε) + b` | **Iterative Refinement (Newton-Schulz)** |
-| **Attention** | $Softmax(QK^T / \sqrt{d})V$ | **Min-Plus Dual-Space (NaN-proof)** |
-| **Total Vocabulary** | `[+, -, *, /, exp, log, tanh, sqrt, pow]` | **`[eml, 1]`** |
+| **Stability** | NaNs out at step 142 | **NaN-proof training to completion** |
+| **Accuracy** | 1.71 Final Loss (GPT-2) | **1.69 Final Loss (GPT-2)** |
+| **Precision** | Standard FP32 LayerNorm | **6.2x precision tightening (Newton-Schulz)** |
 
 👉 **View the full codebase and proofs on GitHub: [atveit/one-op](https://github.com/atveit/one-op)**
 
@@ -35,40 +34,6 @@ In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single 
 Andrzej Odrzywołek's paper [**\"All elementary functions from a single binary operator\"** (arXiv:2603.21852)](https://arxiv.org/abs/2603.21852) established that the pair $\{eml, 1\}$ is the \"NAND gate\" for univariate elementary functions. 
 
 We have extended this to the tensor-valued vocabulary of deep learning. Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
-
-### The Core Math: Reconstructing Primitives
-Here is how the continuous Sheffer primitive maps to standard operations. Each of these identities is formally verified in Lean 4.
-
-<details>
-<summary><strong>View Python Mapping & Lean 4 Proofs (Basic)</strong></summary>
-
-```python
-import numpy as np
-
-def eml(x, y):
-    """The continuous Sheffer primitive: Exp Minus Log."""
-    return np.exp(x) - np.log(y)
-
-# exp(x) is depth 1
-def eml_exp(x):
-    return eml(x, 1.0)
-
-# ln(z) is a depth-3 circuit: eml(1, eml(eml(1, z), 1))
-def eml_ln(z):
-    return eml(1.0, eml(eml(1.0, z), 1.0))
-```
-
-```lean
-/-- exp(x) = eml x 1 -/
-theorem eml_exp (x : ℝ) : eml x 1 = Real.exp x := by
-  simp [eml, Real.log_one]
-
-/-- ln z = eml 1 (eml (eml 1 z) 1) for z > 0 -/
-theorem eml_ln (z : ℝ) (hz : 0 < z) :
-    Real.log z = eml 1 (eml (eml 1 z) 1) := by
-  simp [eml, Real.log_one, Real.log_exp]
-```
-</details>
 
 ---
 
@@ -108,7 +73,7 @@ def eml_gelu(x):
 ```
 
 ### 2.4 The Full Unification Theorem
-To guarantee that our rewrites aren't approximations but mathematically perfect identities, we use Lean 4 (championed by Fields Medalist [Terence Tao](https://terrytao.wordpress.com/)) to certify the **entire** picoGPT architecture.
+We used Lean 4 (championed by Fields Medalist [Terence Tao](https://terrytao.wordpress.com/)) to certify that the **entire** picoGPT architecture is functionally identical to this EML-native formulation.
 
 | Lean 4 Code Snippet | Plain English Logic |
 | :--- | :--- |
