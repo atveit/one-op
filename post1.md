@@ -96,13 +96,16 @@ theorem log_domain_attention_eq_attention {n d : ℕ} [NeZero n] :
 
 
 
+
 ### 2.4 Grokking with EML
 
 Grokking is a mysterious phenomenon where a model suddenly "clicks" and generalizes to 100% validation accuracy long after overfitting the training set. It has been hypothesized that numerical behaviors in the Softmax layer are a primary driver of this effect.
 
 To test this, we ported the [**mlx-grokking**](https://github.com/stockeh/mlx-grokking) reference implementation (which I previously explored in my post [**Grokking implementations in Jax/Flax and Pytorch**](https://amund.blog/pytorch_jax_grokking/)) to the EML framework.
 
-#### The Code: From Standard to EML-Native
+👉 **View the EML-Grokking code: [one-op/eml-mlx-grokking](https://github.com/atveit/one-op/tree/main/eml-mlx-grokking)**
+
+#### The Code: From Standard to EML-Native ( ~550k Params )
 While the transformation to `exp - ln` is straightforward for activations, we employed advanced numerical tricks to maintain the precision required for grokking:
 
 <details>
@@ -132,7 +135,7 @@ def eml_rsqrt_ns(x, iterations=3):
 </details>
 
 #### Results & Performance Comparison
-The EML-native model ( ~550k parameters ) achieves **perfect functional parity**, "clicking" into generalization just like the standard MLX baseline.
+The EML-native model achieves **perfect functional parity**, "clicking" into generalization just like the standard MLX baseline.
 
 | Implementation | Epochs to Grok | Time to Grok (M3 Ultra) |
 | :--- | :--- | :--- |
@@ -141,24 +144,16 @@ The EML-native model ( ~550k parameters ) achieves **perfect functional parity**
 
 ![Grokking Comparison: Standard vs EML](./grokking_comparison.png)
 
-The 35% overhead in training time is the "auditability tax"—the cost of constructing every complex operation from a single atomic primitive. This proves the EML operator is expressive enough to capture even the most subtle phase transitions in deep learning dynamics.
+#### Analysis: Validation Accuracy Fluctuations
+A striking feature of the EML training curve is the **massive fluctuation in validation accuracy** compared to the smoother standard baseline. 
 
----
- | :--- | :--- |
-| **Normalization** | `nn.RMSNorm` | `weight * x * eml_rsqrt_ns(rms_sq)` |
-| **Activations** | `nn.silu` | `x * (1.0 / (1.0 + eml_exp(-x)))` |
-| **Attention** | `mx.fast.sdpa` | `mx.exp(logits - mx.logsumexp(logits))` |
+**Why does this happen?**
+1. **Nesting Depth:** Constructing complex operations like `silu` or `rsqrt` from a single `eml` operator increases the effective "depth" of the floating-point computation. Each nested `exp` and `log` call introduces a small epsilon of rounding error.
+2. **Min-Plus Sensitivity:** In the Log-domain (Min-Plus space), we replace division with subtraction. When logits are large, we subtract two very large numbers to get a small difference—this is the classic "catastrophic cancellation" problem in floating-point math, exacerbated by the depth of the EML stack.
 
-#### Results & Performance
-The EML-native model achieves **perfect functional parity**, "clicking" into generalization on an Apple M3 Ultra.
-
-- **Standard MLX:** ~60 seconds to grok (150 epochs).
-- **EML MLX:** **~112 seconds** to grok (500 epochs).
-- **Accuracy:** **100% Validation Accuracy** with zero NaNs.
-
-![Grokking with EML](./grokking_eml.png)
-
-This proves that the EML operator is expressive enough to capture not just high-level architectures, but the subtle phase transitions and emergent generalization inherent in deep learning dynamics.
+**Future Mitigation:**
+- **Step B (Practical Refinement):** Implementing hybrid kernels that use EML for verification but "go back" to higher-precision fused operations for the gradient steps.
+- **Error-Free Summation:** Utilizing techniques like `Kahan Summation` or `TwoSum` within the EML accumulation loops to preserve the small-signal information during large-logit subtractions.
 
 ---
 ## 3. The "Zero-Sorry" Verification Stack
