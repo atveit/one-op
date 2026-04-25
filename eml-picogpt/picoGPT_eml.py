@@ -1,4 +1,11 @@
 import numpy as np
+import os
+import sys
+
+# Add current directory to path to ensure local imports work
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from utils import load_encoder_hparams_and_params
 
 # ---------------------------------------------------------------------------
 # EML Operator Primitives (Single-Operator Building Blocks)
@@ -79,11 +86,11 @@ def generate(inputs, params, n_head, n_tokens_to_generate):
     return inputs[len(inputs) - n_tokens_to_generate :]
 
 def main(prompt: str, n_tokens_to_generate: int = 40, model_size: str = "124M", models_dir: str = "models"):
-    from picoGPT.utils import load_encoder_hparams_and_params
     encoder, hparams, params = load_encoder_hparams_and_params(model_size, models_dir)
     input_ids = encoder.encode(prompt)
     output_ids = generate(input_ids, params, hparams["n_head"], n_tokens_to_generate)
-    print(encoder.decode(output_ids))
+    print("\nPROMPT:", prompt)
+    print("RESPONSE:", encoder.decode(output_ids))
 
 if __name__ == "__main__":
     import fire
