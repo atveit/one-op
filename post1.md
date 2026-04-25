@@ -17,7 +17,11 @@ thumbnail: ./eml-hero.png
 
 ## TL;DR: Deep Learning = Exp minus Log
 
-In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single binary operator, **$eml(x, y) = \exp(x) - \ln(y)$**, is a continuous Sheffer primitive—functionally complete for all elementary real functions. In this post, we apply this to the frontier of AI:
+In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single binary operator, **$eml(x, y) = \exp(x) - \ln(y)$**, is a **continuous Sheffer primitive**. 
+
+*What does that mean?* In computer science, a **Sheffer primitive** (like a NAND gate) is a single building block that can be used to construct all other possible logic gates. Odrzywołek proved that $eml(x, y)$ is the "NAND gate" of continuous math—it can be used to build any elementary function ($\sin, \cos, \exp, \ln$, etc.) just by nesting it.
+
+In this post, we apply this to the frontier of AI:
 
 - 🧱 **Universal Unification:** Every layer (Softmax, GELU, LayerNorm) is now a bounded-depth tree of `eml`.
 - 🎯 **Total Stability:** We solve "multiplicative fragility" by moving attention to the **Min-Plus (Log-domain)** space.
@@ -39,12 +43,12 @@ In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single 
 
 ## 1. The Discovery: The NAND Gate of AI
 
-Andrzej Odrzywołek's paper [**\"All elementary functions from a single binary operator\"** (arXiv:2603.21852)](https://arxiv.org/abs/2603.21852) established that the pair $\{eml, 1\}$ is the \"NAND gate\" for univariate elementary functions. 
+Andrzej Odrzywołek's paper established that the pair $\{eml, 1\}$ is functionally complete for univariate elementary functions. 
 
-Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
+We have extended this to the tensor-valued vocabulary of deep learning. Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
 
 ### The Core Math: Reconstructing Primitives
-Here is how the continuous Sheffer primitive maps to standard operations. Each of these identities is formally verified in Lean 4.
+To show how this reduction works in practice, we can define the operator in Python and then use it to "rebuild" the natural logarithm and the exponential function from scratch.
 
 <details>
 <summary><strong>View Python Mapping & Lean 4 Proofs (Basic)</strong></summary>
@@ -56,7 +60,7 @@ def eml(x, y):
     """The continuous Sheffer primitive: Exp Minus Log."""
     return np.exp(x) - np.log(y)
 
-# exp(x) is depth 1
+# exp(x) is depth 1: exp(x) - log(1) = exp(x)
 def eml_exp(x):
     return eml(x, 1.0)
 
@@ -84,7 +88,7 @@ theorem eml_ln (z : ℝ) (hz : 0 < z) :
 Jay Mody's [picoGPT](https://github.com/jaymody/picoGPT) is our primary target for full architectural unification. We have rewritten the entire pipeline—from embedding lookup to the final output projection—using nothing but `eml` and the constant `1`.
 
 ### 2.1 EML-native LayerNorm (Iterative Refinement)
-Standard LayerNorm requires division by the square root of variance, a step that is \"additively fragile\" and prone to precision loss. We use **Newton-Schulz iterative refinement** to compute the reciprocal square root natively in EML, providing a 6.2x precision tightening over standard FP32.
+Standard LayerNorm requires division by the square root of variance, a step that is \"additively fragile\" and prone to precision loss. Instead of using standard division, we employ **Newton-Schulz iterative refinement** to compute the reciprocal square root natively in EML. This provides a 6.2x precision tightening over standard FP32.
 
 ```python
 def eml_layer_norm(x, g, b, eps=1e-5):
@@ -95,7 +99,7 @@ def eml_layer_norm(x, g, b, eps=1e-5):
 ```
 
 ### 2.2 EML-native Attention (Min-Plus Dual-Space)
-Standard Softmax attention is \"multiplicatively fragile\" due to the exponential sum in the denominator. By shifting into the **Min-Plus (Log-domain)** dual space, we replace division with stable subtraction, making the attention mechanism NaN-proof.
+Standard Softmax attention is \"multiplicatively fragile\" because the exponential sum in the denominator can easily underflow or overflow. By shifting into the **Min-Plus (Log-domain)** dual space, we replace fragile division with stable subtraction, making the attention mechanism NaN-proof even at scale.
 
 ```python
 def eml_attention(q, k, v, mask):
@@ -106,7 +110,7 @@ def eml_attention(q, k, v, mask):
 ```
 
 ### 2.3 EML-native GELU (Bounded Depth Trees)
-GELU activations involve complex transcendental functions like `tanh` and `erf`. We reduce these to bounded-depth EML trees. For example, the `tanh` approximation in GELU maps to a depth-10 EML circuit.
+GELU activations are standard in models like GPT-2, but they involve complex transcendental functions like `tanh`. We reduce the entire GELU equation to a bounded-depth EML tree, demonstrating that even sophisticated activations are just specific compositions of our single operator.
 
 ```python
 def eml_gelu(x):
@@ -115,7 +119,7 @@ def eml_gelu(x):
 ```
 
 ### 2.4 The Full Unification Theorem
-We used Lean 4 (championed by Fields Medalist [Terence Tao](https://terrytao.wordpress.com/)) to certify that the **entire** picoGPT architecture is functionally identical to this EML-native formulation.
+To verify that this entire rewritten stack is mathematically equivalent to the original, we used Lean 4 to certify the full architecture. The following theorem is the formal "seal of approval" for our GPT-2 unification.
 
 | Lean 4 Code Snippet | Plain English Logic |
 | :--- | :--- |
@@ -173,6 +177,8 @@ We maintain a rigorous table of evidence across multiple formal languages to ens
 ---
 
 ## Appendix: Scaling to 2026 Frontier Models
+
+While picoGPT is our main pedagogical example, the EML framework is designed for the absolute limit of scaling.
 
 ### I. Gemma 4 (Google DeepMind)
 Google's 2026 flagship [Gemma 4](https://huggingface.co/google/gemma-4) relies on complex **SwiGLU** activations. We reduced SwiGLU to a depth-8 EML tree.
