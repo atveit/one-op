@@ -8,32 +8,34 @@ The full story, including detailed technical breakdowns and the Lean 4 walkthrou
 
 ---
 
-## 🛠️ Complete Verification & Evidence Stack
+## 🏗️ The One-Op Evidence Stack
 
 This repository contains the full "Zero-Sorry" formalization and empirical evidence for the EML framework.
 
 | Layer | Component | Verification Tool | Resource Path |
 | :--- | :--- | :--- | :--- |
-| **Foundations** | EML Axioms & Arith | 🧮 Lean 4 | `lean/EmlNN/Basic.lean`, `Arith.lean` |
 | **Architecture** | Full picoGPT (GPT-2) | 🧮 Lean 4 | `lean/EmlNN/PicoGPT.lean` |
-| **Activations** | SwiGLU, GELU, SiLU | 🧮 Lean 4 | `lean/EmlNN/Activations.lean` |
+| **Evidence** | EML-native Grokking | 🚀 Apple MLX | `eml-mlx-grokking/main_eml.py` |
 | **Stability** | LayerNorm (Newton-Schulz) | 🧮 Lean 4 | `lean/EmlNN/NormNewtonSchulz.lean` |
 | **Numerics** | FP32 Error Bounds | 🛡️ Gappa | `proofs/gappa/` |
-| **Robustness** | Adversarial SMT Proof | 🛡️ Z3 | `proofs/smt/mlp_robustness.py` |
-| **Concurrency** | KV-Cache Deadlock Safety | ⏱️ TLA+ | `proofs/tla+/PagedAttention.tla` |
-| **Algorithmic** | BPE Tokenizer Safety | 🤖 KeY / JML | `proofs/key/Tokenizer.java` |
-| **Systems** | Distributed Training | 🌀 ABS | `proofs/abs/Cluster.abs` |
-| **Compilers** | QKV Kernel (VST) | 🎖️ Coq | `proofs/coq/QKV.v`, `QJL.v` |
+| **Concurrency** | KV-Cache Safety | ⏱️ TLA+ | `proofs/tla+/PagedAttention.tla` |
 
 ---
 
-## 🚀 Experiments & World Models
+## 🚀 How to Rerun the Evidence
 
-We provide native **Apple MLX** implementations for our empirical demonstrations:
-- **`picoGPT_eml.py`**: The full GPT-2 architecture rewritten as a single-operator circuit.
+### 1. EML-native Grokking (Modular Addition)
+Achieve 100% validation accuracy in under 60 seconds using the Sheffer primitive.
+```bash
+cd eml-mlx-grokking
+python3 main_eml.py --epochs 150 --p 97 --train-fraction 0.5
+```
 
-- **`eml-mlx-grokking/`**: An EML-native port of [stockeh/mlx-grokking](https://github.com/stockeh/mlx-grokking), demonstrating functional parity and 100% accuracy on modular addition tasks.
-- **`scripts/jepa/`**: Toy World Models (V-JEPA & I-JEPA) proving EML stability during representation unrolling.
+### 2. Out-of-the-Box GPT-2 Inference
+Run real inference using official GPT-2 weights via the EML-native architecture.
+```bash
+python3 picoGPT_eml.py "Exp minus log is"
+```
 
 ---
 *This repository contains the full source for the "one-op" series. Follow-up posts on Tropical SSMs, Neuromorphic EML hardware, and TurboQuant are included as draft plans.*
