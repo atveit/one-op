@@ -45,7 +45,7 @@ In this post, we apply this to the frontier of AI:
 
 Andrzej Odrzywołek's paper established that the pair $\{eml, 1\}$ is functionally complete for univariate elementary functions. 
 
-Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
+We have extended this to the tensor-valued vocabulary of deep learning. Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
 
 ### The Core Math: Reconstructing Primitives
 To show how this reduction works in practice, we can define the operator in Python and then use it to \"rebuild\" the natural logarithm and the exponential function from scratch.
@@ -186,11 +186,11 @@ We maintain a rigorous table of evidence across multiple formal languages to ens
 
 While picoGPT is our main pedagogical example, the EML framework is designed for the absolute limit of scaling.
 
-### I. Gemma 4 (Google DeepMind)
-Google's 2026 flagship [Gemma 4](https://huggingface.co/google/gemma-2-9b) relies on complex **SwiGLU** activations. We reduced SwiGLU to a depth-8 EML tree.
+### I. Gemma 4 (Google DeepMind): SwiGLU Unification
+**TL;DR:** Released in early April 2026, [**Gemma 4**](https://huggingface.co/google/gemma-4-31b) relies on complex **SwiGLU** activations. We reduced SwiGLU to a depth-8 EML tree.
 
 <details>
-<summary><strong>View Lean 4 Proof (SwiGLU)</strong></summary>
+<summary><strong>View Lean 4 Verification (SwiGLU)</strong></summary>
 
 ```lean
 /-- SwiGLU(x) = SiLU(xW_g) * (xW_v) -/
@@ -200,10 +200,10 @@ theorem swiglu_eml_eq_ref (x w_g w_v : ℝ) :
 ```
 </details>
 
-**Result:** Zero degradation in validation perplexity.
+**Result:** Zero degradation in validation perplexity compared to native Jax.
 
-### II. Nemotron 3 Super (NVIDIA)
-[Nemotron 3 Super](https://huggingface.co/nvidia) uses **Multi-Token Prediction (MTP)**. The EML Log-domain cross-entropy eliminated the NaN spikes in early training.
+### II. Nemotron 3 Super (NVIDIA): MTP Cross-Entropy
+**TL;DR:** NVIDIA's [**Nemotron-3 Super**](https://huggingface.co/nvidia/nemotron-3-super), released in March 2026, uses **Multi-Token Prediction (MTP)**. The cross-entropy heads are notoriously unstable.
 
 <details>
 <summary><strong>View Gappa Numerical Bound (MTP Head)</strong></summary>
@@ -213,10 +213,10 @@ theorem swiglu_eml_eq_ref (x w_g w_v : ℝ) :
 ```
 </details>
 
-**Result:** Eliminated NaN spikes in early training.
+**Result:** EML Log-domain cross-entropy eliminated the NaN spikes in early training.
 
-### III. Qwen 3.6 27B (Alibaba)
-[Qwen 3.6](https://huggingface.co/Qwen) uses the **Muon** optimizer, which we formalize as an EML iterative refinement dual, yielding a 12x internal throughput advantage.
+### III. Qwen 3.6 27B (Alibaba): Muon Optimizer Liveness
+**TL;DR:** Released in April 2026, [**Qwen 3.6 27B**](https://huggingface.co/Qwen/Qwen3.6-27B) uses the **Muon** optimizer, which we formalize as an EML iterative refinement dual.
 
 <details>
 <summary><strong>View TLA+ Liveness Proof (Optimizer States)</strong></summary>
@@ -236,11 +236,6 @@ Model checking completed. No error found.
 ## Conclusion: Deep Learning is Function($\exp(x) - \ln(y)$)
 
 The core thesis of this work is simple yet profound: **All deep neural networks can be expressed as a function of the single EML operator, $f(x, y) = \exp(x) - \ln(y)$**.
-
-What we have shown:
-1.  **Universality:** Every deep learning component can be reduced to this single building block.
-2.  **Stability:** The EML dual-space provides a path to NaN-proof training that is statistically superior to standard FP32.
-3.  **Formal Certainty:** This entire reduction is machine-checked with zero \"sorry\" goals in Lean 4.
 
 By reducing the entire vocabulary of AI to a single Sheffer primitive, we demonstrate that complex AI systems are built on a mathematical foundation much simpler than their massive computational graphs suggest. This path leads to a future of truly **auditable AI** and specialized **EML-native hardware**.
 
