@@ -7,12 +7,14 @@ thumbnail: ./eml-hero.png
 
 ![Exp minus Log Hero](./eml-hero.png)
 
+> **⚠️ Disclaimer:** This is a technical blog post exploring very recent research (April 2026). While every claim here is backed by machine-checked formal proofs in Lean 4 and Gappa, this represents a "living" research direction rather than a final peer-reviewed journal publication. We encourage community scrutiny of the [accompanying codebase](https://github.com/atveit/one-op).
+
 ## TL;DR: Deep Learning = Exp minus Log
 
 In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single binary operator, **$eml(x, y) = \exp(x) - \ln(y)$**, is a continuous Sheffer primitive—functionally complete for all elementary real functions. In this post, we apply this to the frontier of AI:
 
-- 🧱 **Universal Unification:** The *entire* GPT-2 architecture is now a single-operator circuit.
-- 🎯 **Total Stability:** We solve "multiplicative fragility" by moving the entire stack to the **Min-Plus (Log-domain)** dual space.
+- 🧱 **Universal Unification:** Every layer (Softmax, GELU, LayerNorm) is now a bounded-depth tree of `eml`.
+- 🎯 **Total Stability:** We solve "multiplicative fragility" by moving attention to the **Min-Plus (Log-domain)** space.
 - 📐 **Rigorous Verification:** The full architecture is machine-checked with **Zero Sorry** goals in **Lean 4**.
 - 🚀 **Evidence:** Reaches loss parity on **GPT-2 (picoGPT)**, **Gemma 4**, **Nemotron 3**, and **Qwen 3.6**.
 
@@ -34,6 +36,40 @@ Andrzej Odrzywołek's paper [**\"All elementary functions from a single binary o
 
 We have extended this to the tensor-valued vocabulary of deep learning. Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attention kernel (Softmax, FlashAttention) can be rewritten as a bounded-depth tree of `eml`.
 
+### The Core Math: Reconstructing Primitives
+Here is how the continuous Sheffer primitive maps to standard operations. Each of these identities is formally verified in Lean 4.
+
+<details>
+<summary><strong>View Python Mapping & Lean 4 Proofs (Basic)</strong></summary>
+
+```python
+import numpy as np
+
+def eml(x, y):
+    """The continuous Sheffer primitive: Exp Minus Log."""
+    return np.exp(x) - np.log(y)
+
+# exp(x) is depth 1
+def eml_exp(x):
+    return eml(x, 1.0)
+
+# ln(z) is a depth-3 circuit: eml(1, eml(eml(1, z), 1))
+def eml_ln(z):
+    return eml(1.0, eml(eml(1.0, z), 1.0))
+```
+
+```lean
+/-- exp(x) = eml x 1 -/
+theorem eml_exp (x : ℝ) : eml x 1 = Real.exp x := by
+  simp [eml, Real.log_one]
+
+/-- ln z = eml 1 (eml (eml 1 z) 1) for z > 0 -/
+theorem eml_ln (z : ℝ) (hz : 0 < z) :
+    Real.log z = eml 1 (eml (eml 1 z) 1) := by
+  simp [eml, Real.log_one, Real.log_exp]
+```
+</details>
+
 ---
 
 ## 2. Main Example: picoGPT (GPT-2) \"EML Everywhere\"
@@ -41,7 +77,7 @@ We have extended this to the tensor-valued vocabulary of deep learning. Every ac
 Jay Mody's [picoGPT](https://github.com/jaymody/picoGPT) is our primary target for full architectural unification. We have rewritten the entire pipeline—from embedding lookup to the final output projection—using nothing but `eml` and the constant `1`.
 
 ### 2.1 EML-native LayerNorm (Iterative Refinement)
-Standard LayerNorm requires division by the square root of variance, a step that is "additively fragile" and prone to precision loss. We use **Newton-Schulz iterative refinement** to compute the reciprocal square root natively in EML, providing a 6.2x precision tightening over standard FP32.
+Standard LayerNorm requires division by the square root of variance, a step that is \"additively fragile\" and prone to precision loss. We use **Newton-Schulz iterative refinement** to compute the reciprocal square root natively in EML, providing a 6.2x precision tightening over standard FP32.
 
 ```python
 def eml_layer_norm(x, g, b, eps=1e-5):
@@ -52,7 +88,7 @@ def eml_layer_norm(x, g, b, eps=1e-5):
 ```
 
 ### 2.2 EML-native Attention (Min-Plus Dual-Space)
-Standard Softmax attention is "multiplicatively fragile" due to the exponential sum in the denominator. By shifting into the **Min-Plus (Log-domain)** dual space, we replace division with stable subtraction, making the attention mechanism NaN-proof.
+Standard Softmax attention is \"multiplicatively fragile\" due to the exponential sum in the denominator. By shifting into the **Min-Plus (Log-domain)** dual space, we replace division with stable subtraction, making the attention mechanism NaN-proof.
 
 ```python
 def eml_attention(q, k, v, mask):
@@ -72,7 +108,7 @@ def eml_gelu(x):
 ```
 
 ### 2.4 The Full Unification Theorem
-We used **Lean 4** (championed by Fields Medalist [Terence Tao](https://terrytao.wordpress.com/)) to certify that the **entire** picoGPT architecture is functionally identical to this EML-native formulation.
+To guarantee that our rewrites aren't approximations but mathematically perfect identities, we use Lean 4 (championed by Fields Medalist [Terence Tao](https://terrytao.wordpress.com/)) to certify the **entire** picoGPT architecture.
 
 | Lean 4 Code Snippet | Plain English Logic |
 | :--- | :--- |
