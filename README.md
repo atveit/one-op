@@ -31,6 +31,8 @@ This repository contains the full "Zero-Sorry" formalization and empirical evide
 
 We provide native **Apple MLX** implementations for our empirical demonstrations:
 - **`picoGPT_eml.py`**: The full GPT-2 architecture rewritten as a single-operator circuit.
+
+- **`eml-mlx-grokking/`**: An EML-native port of [stockeh/mlx-grokking](https://github.com/stockeh/mlx-grokking), demonstrating functional parity and 100% accuracy on modular addition tasks.
 - **`scripts/jepa/`**: Toy World Models (V-JEPA & I-JEPA) proving EML stability during representation unrolling.
 
 ---
