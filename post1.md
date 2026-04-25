@@ -1,5 +1,5 @@
 ---
-title: "Exp minus Log is all you need for Deep Learning? (Shown for GPT-2, Nemotron-3, Gemma-4 and Qwen-3.6)"
+title: "Exp minus Log is all you need for Deep Learning? (Examples for GPT-2, Grokking, Gemma 4, Nemotron-3 and Qwen-3.6)"
 date: "2026-04-21T00:00:00Z"
 description: "Reducing the entire deep learning stack—from GPT-2 to Nemotron-3—to a single mathematical operator. Formal verification in Lean 4, Gappa, and TLA+."
 thumbnail: ./eml-hero.png
