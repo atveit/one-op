@@ -1,5 +1,5 @@
 ---
-title: "Exp minus Log is all you need for Deep Learning? (Examples for GPT-2, Grokking, Gemma 4, Nemotron-3 and Qwen-3.6)"
+title: "Exp minus Log is all you need for Deep Learning?"
 date: "2026-04-21T00:00:00Z"
 description: "From emulation to native representation. How the Odrzywołek Sheffer primitive enables direct functional approximation and zero-power analog hardware."
 thumbnail: ./eml-hero.png
@@ -13,19 +13,20 @@ thumbnail: ./eml-hero.png
 
 <div style="background-color: #f0f7ff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px;">
 
-> **⚠️ Disclaimer:** *This is a technical blog post exploring living research (April 2026). While every claim here is backed by machine-checked proofs in Lean 4 and Gappa, this represents a shift from classical \"Fused Multiply-Add\" math to a single-operator substrate. Content is provided as-is.*
+> **⚠️ Disclaimer:** *This is a technical blog post exploring living research (April 2026). While the core claims are backed by machine-checked proofs in Lean 4 and Gappa, this represents a shift from classical "Fused Multiply-Add" math toward a single-operator substrate. Content is provided as-is and intended for academic discussion.*
 
 ## TL;DR: Deep Learning = Exp minus Log
 
 In early 2026, Andrzej Odrzywołek proved that the single binary operator **eml(x, y) = exp(x) - ln(y)** (plus the constant 1) is a **continuous Sheffer primitive**. 
 
-Just as the **NAND gate** is the universal building block for all digital logic, `eml` is the \"NAND gate\" of continuous mathematics. In this post, we demonstrate that this operator isn't just an alternative for \"old math\"—it is a superior substrate for the next generation of AI:
+Just as the **NAND gate** is the universal building block for all digital logic, `eml` is the "NAND gate" of continuous mathematics. In this post, we demonstrate how this operator provides a path toward a unified substrate for the next generation of AI:
 
-- 🧱 **Direct Representation:** Instead of building complex \"emulated\" layers (MatMul, Softmax), we show that neural networks can be expressed directly as trees of `eml` nodes, enabling massive parameter-golf wins for small models.
-- 🚀 **Evidence:** Our EML-native Transformer achieves **100% accuracy on Grokking tasks**, proving the primitive captures emergent generalization dynamics directly.
-- 🎯 **Stability:** By shifting to the **Min-Plus (Log-domain) dual space**, we solve \"multiplicative fragility\" (NaNs).
-- 📐 **Verification:** The entire stack is machine-checked with **Zero Sorry** goals in **Lean 4**.
-- ⚡ **Analog Horizon:** EML is the native language of **PN-junction physics**, opening a path to 1000x more efficient zero-power hardware.
+- 🚀 **Empirical Evidence:** Our EML-native Transformer achieves **100% accuracy on Grokking tasks**, proving the primitive captures emergent generalization dynamics.
+- 🌍 **World Models:** We apply the framework to Yann LeCun's **JEPA** architectures, preventing representation collapse through stable, verified energy losses.
+- 🧱 **Structural Unification:** Every standard layer—Softmax, GELU, LayerNorm—can be reduced to a bounded-depth EML circuit.
+- 🎯 **Numerical Stability:** Shifting to the **Min-Plus (Log-domain) dual space** provides a path to eliminate "multiplicative fragility" (NaNs).
+- 📐 **Formal Verification:** Core components are machine-checked with **Zero Sorry** goals in **Lean 4**.
+- ⚡ **Analog Horizon:** EML aligns with the native language of **PN-junction physics**, suggesting a roadmap for 1000x more efficient neuromorphic hardware.
 
 </div>
 
@@ -35,10 +36,10 @@ Just as the **NAND gate** is the universal building block for all digital logic,
 
 ## 1. The EML Substrate: Beyond Emulation
 
-Historically, we've built neural networks from a diverse vocabulary: additions, multiplications, square roots, and tangents. Odrzywołek’s proof changes the perspective: {eml, 1} forms an algebra that can **uniformly approximate any continuous function** (via Stone-Weierstrass).
+Historically, neural networks are built from a diverse vocabulary of multipliers, dividers, and transcendentals. Odrzywołek’s proof established a deeper theoretical foundation: $\{eml, 1\}$ forms an algebra that can **uniformly approximate any continuous function** (via Stone-Weierstrass).
 
-### From Emulation to Native Code
-You *can* use EML to build \"old math\" functions, but that carries a \"depth tax\":
+### Direct Representation vs. Emulation
+While we can use EML to "emulate" old math, the real potential lies in direct representation:
 
 ```python
 import numpy as np
@@ -46,19 +47,12 @@ import numpy as np
 def eml(x, y):
     return np.exp(x) - np.log(y)
 
-# \"Emulating\" old math:
+# "Emulating" old math (High Depth Tax):
 # ln(z) = eml(1, eml(eml(1, z), 1)) [Depth 3]
 # x * y = exp(ln x + ln y)         [Depth 10+]
 ```
 
-The real breakthrough for **small neural networks** and **constrained hardware** is skipping the emulation. By training directly in the EML space, we treat each neuron not as a \"dot product + activation,\" but as a **Dual-Space Aggregator**.
-
-### Why the \"Dual Representation\" Matters
-EML naturally bridges the two worlds of deep learning:
-1. **The Additive World:** Subtraction and addition are \"shallow\" EML operations.
-2. **The Multiplicative World:** Exponentials and logarithms (the core of Attention and Normalization) are \"native\" EML operations.
-
-By using EML as the foundation, we no longer have to \"switch\" between these spaces; the network operates in a single unified dual-representation that is stable across 1000x wider dynamic ranges than standard FP32.
+For **small neural networks**, we hypothesize a path toward extreme parameter efficiency by training directly in the EML space. Instead of a "dot product + activation," each neuron becomes a **Dual-Space Aggregator**. This bridges the additive world (subtraction) and the multiplicative world (exp/ln) into a single, unified representation that remains stable across vast dynamic ranges.
 
 ---
 
@@ -66,34 +60,47 @@ By using EML as the foundation, we no longer have to \"switch\" between these sp
 
 Empiri is often stronger than theory. We ported the [**mlx-grokking**](https://github.com/stockeh/mlx-grokking) reference to this EML substrate to see if it could capture the most subtle phase transition in deep learning.
 
-**The Result:** The EML-native model ( ~550k parameters ) achieved **perfect functional parity**, \"clicking\" into 100% generalization in **58 seconds** on an Apple M3 Ultra.
+**The Result:** The EML-native model achieving **perfect functional parity**, "clicking" into 100% generalization on an Apple M3 Ultra.
 
 ![Grokking Comparison: Standard vs EML](./grokking_comparison.png)
 
-#### Analysis: Numerical Friction & The \"Auditability Tax\"
-The EML variant reaches the same 100% plateau, but the transition is delayed (~480 vs ~140 epochs). This \"numerical friction\" arises because we are constructing complex operations from a single atomic primitive. For small models, this tax is the price of **mathematical certainty** and a direct path to **analog deployment**.
+#### Analysis: Numerical Friction & The "Auditability Tax"
+The EML variant reaches the same plateau, but we observe a **Grokking Delay** (~480 vs ~140 epochs). We believe this is "numerical friction": constructing complex operations from a single primitive propagates small rounding errors through the nested stack, slowing down the subtle weight alignments needed for the phase transition.
 
 ---
 
 ## 3. Advanced Evidence: JEPA World Models
 
-Beyond autoregressive models (LLMs), we applied EML to Yann LeCun’s **Joint-Embedding Predictive Architecture (JEPA)**. Unlike GPT, JEPA learns by predicting *representations* rather than tokens, making it a leading candidate for \"World Models.\"
+Beyond LLMs, we applied EML to Yann LeCun’s **Joint-Embedding Predictive Architecture (JEPA)**. Unlike GPT, JEPA learns by predicting *representations*, filtering out unpredictable noise.
+
+👉 **View JEPA Source: [one-op/scripts/jepa/](https://github.com/atveit/one-op/tree/main/scripts/jepa)**
 
 ### A. Solving Representation Collapse
-JEPA models are prone to \"collapse\"—where the model outputs the same vector for every input. To prevent this, architectures like **V-JEPA** use **VICReg** (Variance-Invariance-Covariance Regularization).
+JEPA models often fail when representations "collapse" to a single point. To prevent this, architectures like **V-JEPA** use **VICReg** (Variance-Invariance-Covariance Regularization). Standard VICReg is "additively fragile" in FP32.
 
-Standard VICReg relies on calculating the variance of embeddings, an operation that is \"additively fragile\" and prone to precision loss in FP32. Using the **EML Newton-Schulz refined rsqrt**, we constructed a formally verified, perfectly stable VICReg loss.
+**The Transformation:**
+| Component | Standard VICReg | EML-native Port |
+| :--- | :--- | :--- |
+| **Std Dev** | `mx.sqrt(var_y + eps)` | `1.0 / eml_rsqrt_ns(var_y)` |
+| **Numerical Trick** | Standard Sqrt | **Newton-Schulz Iterative Refinement** |
 
-**Result:** In our **1D Kinematics (Bouncing Ball)** test, the EML-native world model trained to completion without a single NaN spike, whereas the standard baseline experienced representation collapse under identical low-variance conditions.
+```python
+# EML-native VICReg Snippet
+# Prevents collapse by refining standard deviation in the dual-space
+std_y = 1.0 / eml_rsqrt_ns(var_y, eps=eps)
+var_loss = mx.mean(mx.maximum(0.0, gamma - std_y))
+```
+
+**Result:** In our **1D Kinematics (Bouncing Ball)** test, EML eliminated the NaN spikes that caused collapse in the baseline under precision starvation.
 
 ![Bouncing Ball Stability](./1d_kinematics_vjepa.png)
 
 ### B. Latent Trajectory Stability
-World models are often unrolled iteratively for planning (e.g., predicting 50 steps into the future). Tiny errors compound, leading to \"trajectory drift.\"
+World models are often unrolled iteratively for planning. Tiny errors compound, leading to "trajectory drift."
 
 ![Trajectory Drift](./trajectory_drift_ijepa.png)
 
-**The EML Win:** By operating entirely in the **Min-Plus dual space**, our EML-native predictor maintains numerical purity across T=50 unrolled steps, whereas standard FP32 predictors experience significant semantic drift in the latent space.
+By operating in the **Min-Plus dual space**, our EML-native predictor maintains numerical purity across $T=50$ unrolled steps, whereas standard FP32 predictors experience significant semantic drift in the latent space.
 
 ---
 
@@ -106,22 +113,15 @@ Why construct neural networks from `exp` and `ln`? Because **nature computes the
 </div>
 
 In a standard MOSFET in sub-threshold operation, the current is proportional to the exponential of the gate voltage. Conversely, driving a current through a diode yields a voltage proportional to the logarithm.
-1. **EML as Unifier:** `eml(x, y) = exp(x) − ln(y)` is exactly the physical I-V transfer function of a basic **PN-junction** pair.
-2. **Kirchhoff's Math:** In the EML dual-space, multiplication is current summation. No digital multipliers, no clock cycles.
-
-### Recent Breakthroughs (2025-2026)
-The industry is currently hitting a "commercial tipping point" for analog neuromorphic computing. Recent breakthroughs highlight the exascale potential of this substrate:
 
 > *"You can solve real physics problems with brain-like computation... These are exascale-level problems that our brains are capable of doing very cheaply."*  
 > — **Brad Aimone**, Sandia National Laboratories (*Nature Machine Intelligence*, Jan 2026)
 
-> *"Silicon achieves complexity by having billions of identical devices... The brain is the opposite. It's heterogeneous, dynamic and three-dimensional. To move in that direction, we need new materials and new ways to build electronics."*  
-> — **Mark Hersam**, Northwestern University (*Nature Nanotechnology*, April 2026)
+### EML as the Physical Unifier
+1. **PN-Junction Physics:** `eml(x, y) = exp(x) − ln(y)` is essentially the physical I-V transfer function of a basic semiconductor junction pair.
+2. **Kirchhoff's Math:** In the log-domain, multiplication becomes current summation. No digital multipliers, no clock cycles.
 
-> *"This work shows that chemistry can be an architect of computation, not just its supplier."*  
-> — **Sreebrata Goswami**, IISc Bangalore (*Advanced Materials*, Jan 2026)
-
-This suggests that EML isn't just an auditability play; it is a blueprint for **neuromorphic LNS (Logarithmic Number System) hardware** that aligns AI algorithms with the native physics of their substrate, potentially achieving 1000x better energy efficiency than digital silicon.
+This suggests that EML is a blueprint for **neuromorphic LNS hardware** that aligns AI with the native physics of its substrate, potentially achieving 1000x better energy efficiency than digital silicon.
 
 ---
 
@@ -129,8 +129,8 @@ This suggests that EML isn't just an auditability play; it is a blueprint for **
 
 Using Jay Mody's minimalist [picoGPT](https://github.com/jaymody/picoGPT), we replaced the *entire* 124M parameter pipeline with verified EML circuits.
 
-### 5.1 Side-by-Side Inference Proof (Actual GPT-2 Weights)
-Because EML circuits are mathematically identical to standard operations, they produce **bit-for-bit identical text** using official OpenAI 124M weights.
+### Side-by-Side Inference (Actual GPT-2 Weights)
+Because EML circuits are mathematically identical to standard operations, they produce **bit-for-bit identical text** using official OpenAI weights.
 
 | Prompt | Standard picoGPT Output | EML-native Output |
 | :--- | :--- | :--- |
@@ -149,11 +149,11 @@ theorem pico_gpt2_equivalence ... := by
 
 ---
 
-## Conclusion: Deep Learning is Function( exp(x) - ln(y) )
+## Conclusion: Deep Learning as Functional Composition
 
-The core thesis is simple: **All deep neural networks can be expressed as a function of the single EML operator, $f(x, y) = \exp(x) - \ln(y)$**.
+The core thesis of this work is that **Deep Learning can be unified as a function of the single EML operator, $f(x, y) = \exp(x) - \ln(y)$**.
 
-By reducing AI to a single Sheffer primitive, we unify **universality theory**, **numerical stability**, and **analog hardware co-design**. This path leads to a future of truly **auditable AI** that aligns with the native physics of its substrate.
+By reducing AI to a single Sheffer primitive, we unify three previously separate threads: **universality theory**, **numerical stability**, and **analog hardware co-design**. This path leads toward truly **auditable AI** that aligns with the native physics of its substrate, moving us from "simulating" math to "executing" physics.
 
 ---
 **Explore the complete proof suite:** [github.com/atveit/one-op](https://github.com/atveit/one-op)
