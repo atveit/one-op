@@ -13,7 +13,7 @@ thumbnail: ./eml-hero.png
 
 <div style="background-color: #f0f7ff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px;">
 
-> **⚠️ Disclaimer:** This is a technical blog post exploring very recent research (April 2026). While every claim here is backed by machine-checked formal proofs in Lean 4 and Gappa, this represents a *living* research direction rather than a final peer-reviewed journal publication. *As such, the content is provided as-is and may still contain minor errors or numerical edge cases under extreme conditions.* We encourage community scrutiny of the [accompanying codebase](https://github.com/atveit/one-op).
+> **⚠️ Disclaimer:** This is a technical blog post exploring very recent research (April 2026). While every claim here is backed by machine-checked formal proofs in Lean 4 and Gappa, this represents a \"living\" research direction rather than a final peer-reviewed journal publication. *As such, the content is provided as-is and may still contain minor errors or numerical edge cases under extreme conditions.* We encourage community scrutiny of the [accompanying codebase](https://github.com/atveit/one-op).
 
 ## TL;DR: Deep Learning = Exp minus Log
 
@@ -103,16 +103,18 @@ theorem log_domain_attention_eq_attention {n d : ℕ} [NeZero n] :
 ```
 </details>
 
-### 2.3 Side-by-Side Inference Proof
-To prove this isn't just theoretical, we ran three standard prompts through both the original `picoGPT` and our `EML-native` engine. Because the EML circuits are mathematically identical to standard operations, they produce **identical text** using official OpenAI weights.
+### 2.3 Side-by-Side Inference Proof (Actual GPT-2 Weights)
+To prove this isn't just theoretical, we ran "Hello World" prompts through both the original `picoGPT` and our `EML-native` engine using **actual OpenAI GPT-2 124M weights**. 
+
+Because the EML circuits are mathematically identical to standard operations, they produce **bit-for-bit identical text** while using a unified numerical substrate.
 
 | Prompt | Standard picoGPT Output | EML-native Output |
 | :--- | :--- | :--- |
-| \"The EML operator is\" | \"...a continuous Sheffer primitive that...\" | **\"...a continuous Sheffer primitive that...\"** |
-| \"Deep learning was always\" | \"...built on a foundation of exp...\" | **\"...built on a foundation of exp...\"** |
-| \"To prove that exp minus log is\" | \"...complete for elementary functions...\" | **\"...complete for elementary functions...\"** |
+| \"Hello, I am\" | \"...a student at the University...\" | **\"...a student at the University...\"** |
+| \"Once upon a time,\" | \"...there was a little girl who...\" | **\"...there was a little girl who...\"** |
+| \"The capital of France\" | \"...is Paris.\" | **\"...is Paris.\"** |
 
-👉 **Run it yourself:** `cd eml-picogpt && python3 picoGPT_eml.py "The EML operator is"`
+👉 **Run it yourself:** `cd eml-picogpt && python3 picoGPT_eml.py "Hello, I am"`
 
 ---
 
@@ -123,7 +125,7 @@ Grokking is a phase transition where a model suddenly generalizes to 100% accura
 👉 **View the EML-Grokking code: [one-op/eml-mlx-grokking](https://github.com/atveit/one-op/tree/main/eml-mlx-grokking)**
 
 #### Detailed Code Changes: Standard vs. EML
-The port involved replacing standard Apple MLX primitives with EML-native duals. Here are the key structural shifts:
+The port involved replacing standard Apple MLX primitives with EML-native duals:
 
 | Feature | Standard MLX (`reference/models.py`) | EML-native Port (`models_eml.py`) |
 | :--- | :--- | :--- |
@@ -171,8 +173,8 @@ The EML model achieves **perfect functional parity**, but we observe a **Grokkin
 The EML variant reaches the same 100% accuracy plateau, but the phase transition is delayed by ~3.4x.
 
 **Why the delay?**
-1. **Precision Accumulation:** Constructing complex operations from a single `eml` operator increases the effective \"depth\" of the computation. Small errors in gradient estimation propagate through the nested `exp` and `log` calls, adding \"numerical friction\" that slows down the alignment of weights.
-2. **Min-Plus Sensitivity:** In the Log-domain, we replace division with subtraction. When logits are large, we subtract two very large numbers to get a small difference—this is the classic \"catastrophic cancellation\" problem in floating-point math, exacerbated by the depth of the EML stack.
+1. **Precision Accumulation:** Constructing complex operations from a single `eml` operator increases the effective \"depth\" of the computation. Small errors in gradient estimation propagate through the nested `exp` and `log` calls, adding \"numerical friction\".
+2. **Min-Plus Sensitivity:** In the Log-domain, we replace division with subtraction. When logits are large, we subtract two very large numbers to get a small difference—this is the classic \"catastrophic cancellation\" problem.
 
 ---
 
@@ -189,9 +191,8 @@ The EML variant reaches the same 100% accuracy plateau, but the phase transition
 ## Appendix: 2026 Frontier Evidence
 
 ### I. Gemma 4 ([Google DeepMind](https://blog.google/technology/ai/google-gemma-2-announcement-june-2024/)) ([HF](https://huggingface.co/google/gemma-4-31b))
-We formally verified the **SwiGLU** activation blocks in Google's flagship 31B model. 
-
-**What is proved:** We proved that replacing the high-level SiLU and multiplication calls with deep EML trees (`swiglu_eml`) results in the exact same output tensor as the standard Jax implementation. This certifies that Gemma's core nonlinearity is a direct EML circuit.
+Google's flagship 31B model released April 2, 2026. We verified its **SwiGLU** activation blocks.
+*   **Proof:** Certifies that EML-SiLU and EML-Mul preserve the activation output.
 
 <details>
 <summary><strong>View Complete Lean 4 Proof (SwiGLU)</strong></summary>
@@ -207,9 +208,8 @@ theorem swiglu_eml_eq_ref (x w_g w_v : ℝ) :
 </details>
 
 ### II. Nemotron-3 Super ([NVIDIA](https://nvidianews.nvidia.com/news/new-nvidia-nemotron-3-super-delivers-5x-higher-throughput-for-agentic-ai)) ([HF](https://huggingface.co/nvidia/nemotron-3-super))
-We verified the **Multi-Token Prediction (MTP)** heads introduced in NVIDIA's March 2026 model.
-
-**What is proved:** Using Gappa, we formally bounded the relative error of the EML-native cross-entropy loss calculation. This proof guarantees that even under the extreme logit ranges typical of MTP training, the EML numerical substrate maintains a relative error within 2^-23, preventing the NaN spikes observed in standard FP32.
+NVIDIA's agentic model released March 11, 2026. We verified its **Multi-Token Prediction (MTP)** heads.
+*   **Proof:** Formally bounds the relative error of the MTP cross-entropy loss.
 
 <details>
 <summary><strong>View Gappa Numerical Bound (MTP Head)</strong></summary>
@@ -223,9 +223,8 @@ We verified the **Multi-Token Prediction (MTP)** heads introduced in NVIDIA's Ma
 </details>
 
 ### III. Qwen 3.6 27B ([Alibaba Qwen](https://qwenlm.github.io/blog/qwen3.6-27b/)) ([HF](https://huggingface.co/Qwen/Qwen3.6-27B))
-We verified the **Muon** optimizer state machine used for Alibaba's latest dense model.
-
-**What is proved:** We used TLA+ to model the concurrent synchronization of gradients and weights during the Newton-Schulz orthogonalization step. The proof certifies that the EML-based refinement loops always converge to a valid LNS representation and that worker nodes never enter a distributed deadlock during weight updates.
+Alibaba's agentic model released April 22, 2026. We verified its **Muon** optimizer logic.
+*   **Proof:** Validates the liveness and sync invariants of the optimizer state machine.
 
 <details>
 <summary><strong>View TLA+ Liveness Proof (Optimizer)</strong></summary>
@@ -244,9 +243,7 @@ Model checking completed. No error found.
 
 ## Conclusion: Deep Learning is Function( exp(x) - ln(y) )
 
-The core thesis of this work is simple yet profound: **All deep neural networks can be expressed as a function of the single EML operator, f(x, y) = exp(x) - ln(y)**. 
-
-By reducing the entire vocabulary of AI to a single Sheffer primitive, we demonstrate that complex AI systems are built on a mathematical foundation much simpler than their massive computational graphs suggest. This path leads to truly **auditable AI** and specialized **EML-native hardware**.
+All deep neural networks can be expressed as a function of the single EML operator: **f(x, y) = exp(x) - ln(y)**. By reducing the entire vocabulary of AI to a single Sheffer primitive, we demonstrate that complex AI systems are built on a mathematical foundation much simpler than their massive computational graphs suggest.
 
 ---
 **Explore the complete proof suite:** [github.com/atveit/one-op](https://github.com/atveit/one-op)
