@@ -8,28 +8,30 @@ The full story, including detailed technical breakdowns and the Lean 4 walkthrou
 
 ---
 
-## TL;DR: The EML Framework
+## 🛠️ Complete Verification & Evidence Stack
 
-Based on the March 2026 breakthrough by Andrzej Odrzywołek, we demonstrate that the single binary operator **`eml(x, y) = exp(x) - ln(y)`** (plus the constant `1`) is a continuous Sheffer primitive—functionally complete for the entire mathematical vocabulary of deep learning.
+This repository contains the full "Zero-Sorry" formalization and empirical evidence for the EML framework.
 
-### Key Highlights:
-- **Unification:** Every layer (Softmax, LayerNorm, GELU, etc.) is rewritten as a bounded-depth tree of `eml`.
-- **Numerical Stability:** We solve "multiplicative fragility" by shifting fragile operations like Softmax into the **Min-Plus (Log-domain)** space, replacing division with stable subtraction.
-- **Formal Verification:** The entire stack is verified with "Zero-Sorry" correctness in **Lean 4**, while **Gappa** bounds FP32 errors and **TLA+** ensures operational safety.
-- **Real-World Proof:** Applied to **picoGPT** and scaled to 2026 frontier models (Nemotron 3 Super, Qwen 3.6), maintaining perfect loss parity while eliminating NaN crashes.
-
----
-
-## 🛠️ Resources & Code (Post 1)
-
-| Resource | Description |
-| :--- | :--- |
-| 📄 **[post1.md](post1.md)** | Local markdown copy of the technical tour. |
-| 🧮 **[lean/EmlNN/Basic.lean](lean/EmlNN/Basic.lean)** | Foundational Lean 4 axioms for the `eml` operator. |
-| 📐 **[lean/EmlNN/Attention.lean](lean/EmlNN/Attention.lean)** | Lean 4 proof of mathematical equivalence for Log-domain attention. |
-| 🛡️ **[proofs/smt/mlp_robustness.py](proofs/smt/mlp_robustness.py)** | Z3 SMT solver script proving local adversarial robustness. |
-| 🤖 **[picoGPT/](picoGPT/)** | Minimalist GPT-2 reference implementation used for the EML rewrite. |
-| 💬 **[llm_reviews/](llm_reviews/)** | Hard-hitting peer reviews from GPT-5.4, Claude Opus 4.6, and Gemini 3.1. |
+| Layer | Component | Verification Tool | Resource Path |
+| :--- | :--- | :--- | :--- |
+| **Foundations** | EML Axioms & Arith | 🧮 Lean 4 | `lean/EmlNN/Basic.lean`, `Arith.lean` |
+| **Architecture** | Full picoGPT (GPT-2) | 🧮 Lean 4 | `lean/EmlNN/PicoGPT.lean` |
+| **Activations** | SwiGLU, GELU, SiLU | 🧮 Lean 4 | `lean/EmlNN/Activations.lean` |
+| **Stability** | LayerNorm (Newton-Schulz) | 🧮 Lean 4 | `lean/EmlNN/NormNewtonSchulz.lean` |
+| **Numerics** | FP32 Error Bounds | 🛡️ Gappa | `proofs/gappa/` |
+| **Robustness** | Adversarial SMT Proof | 🛡️ Z3 | `proofs/smt/mlp_robustness.py` |
+| **Concurrency** | KV-Cache Deadlock Safety | ⏱️ TLA+ | `proofs/tla+/PagedAttention.tla` |
+| **Algorithmic** | BPE Tokenizer Safety | 🤖 KeY / JML | `proofs/key/Tokenizer.java` |
+| **Systems** | Distributed Training | 🌀 ABS | `proofs/abs/Cluster.abs` |
+| **Compilers** | QKV Kernel (VST) | 🎖️ Coq | `proofs/coq/QKV.v`, `QJL.v` |
 
 ---
-*This repository contains the first installment of the "one-op" series. Speculative future posts on Tropical SSMs and Neuromorphic EML hardware are coming soon.*
+
+## 🚀 Experiments & World Models
+
+We provide native **Apple MLX** implementations for our empirical demonstrations:
+- **`picoGPT_eml.py`**: The full GPT-2 architecture rewritten as a single-operator circuit.
+- **`scripts/jepa/`**: Toy World Models (V-JEPA & I-JEPA) proving EML stability during representation unrolling.
+
+---
+*This repository contains the full source for the "one-op" series. Follow-up posts on Tropical SSMs, Neuromorphic EML hardware, and TurboQuant are included as draft plans.*

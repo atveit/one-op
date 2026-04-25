@@ -1,0 +1,67 @@
+module Cluster;
+
+// ---------------------------------------------------------
+// ABS: Active Behavioral Specifications
+// Model for Distributed GPT-2 Training
+// ---------------------------------------------------------
+
+interface Worker {
+    Unit computeGradient(List<Float> weights);
+}
+
+interface ParameterServer {
+    Unit pushGradient(List<Float> gradient);
+    List<Float> pullWeights();
+}
+
+class WorkerImpl(ParameterServer ps) implements Worker {
+    Unit computeGradient(List<Float> weights) {
+        // Model the asynchronous computation time
+        await duration(5, 10); 
+        
+        List<Float> grad = list[1.0, 2.0, 3.0]; // Dummy gradient
+        
+        // Push gradients back to the Parameter Server asynchronously
+        ps!pushGradient(grad);
+    }
+}
+
+class ParameterServerImpl implements ParameterServer {
+    List<Float> currentWeights = list[0.0, 0.0, 0.0];
+    Int gradientsReceived = 0;
+
+    Unit pushGradient(List<Float> gradient) {
+        this.gradientsReceived = this.gradientsReceived + 1;
+        // Synchronize and step the optimizer when enough gradients arrive
+        if (this.gradientsReceived >= 4) {
+            this.currentWeights = list[1.0, 1.0, 1.0]; // Dummy update
+            this.gradientsReceived = 0;
+        }
+    }
+
+    List<Float> pullWeights() {
+        return this.currentWeights;
+    }
+}
+
+// Main execution block to test for distributed deadlocks
+{
+    ParameterServer ps = new ParameterServerImpl();
+    Worker w1 = new WorkerImpl(ps);
+    Worker w2 = new WorkerImpl(ps);
+    Worker w3 = new WorkerImpl(ps);
+    Worker w4 = new WorkerImpl(ps);
+
+    // All workers pull and compute concurrently
+    List<Float> w1_w = ps.pullWeights();
+    w1!computeGradient(w1_w);
+
+    List<Float> w2_w = ps.pullWeights();
+    w2!computeGradient(w2_w);
+
+    List<Float> w3_w = ps.pullWeights();
+    w3!computeGradient(w3_w);
+
+    List<Float> w4_w = ps.pullWeights();
+    w4!computeGradient(w4_w);
+}
