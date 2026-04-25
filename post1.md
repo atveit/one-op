@@ -106,8 +106,9 @@ Because the EML circuits are mathematically identical to standard operations, th
 
 | Prompt | Standard picoGPT Output | EML-native Output |
 | :--- | :--- | :--- |
-| \"Hello, I am\" | \"...a student at the University...\" | **\"...a student at the University...\"** |
-| \"The capital of France is\" | \"...is Paris.\" | **\"...is Paris.\"** |
+| "The future of AI" | "...is uncertain. 'We're..." | **"...is uncertain. 'We're..."** |
+| "Two plus two is" | "...a lot of money. '..." | **"...a lot of money. '..."** |
+| "The capital of France is" | "...the capital of the French Republic..." | **"...the capital of the French Republic..."** |
 
 ---
 
