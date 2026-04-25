@@ -11,7 +11,7 @@ thumbnail: ./eml-hero.png
 
 ## Executive Summary: The One-Operator World
 
-In early 2026, [**Dr. Andrzej Odrzywołek**](https://portal.uj.edu.pl/en_GB/pracownik/-/pracownik/andrzej-odrzywolek) of Jagiellonian University published a breakthrough discovery: a single binary operator, **$eml(x, y) = \exp(x) - \ln(y)$**, is a **continuous Sheffer primitive**—the "NAND gate" of continuous mathematics. 
+In early 2026, [**Dr. Andrzej Odrzywołek**](https://portal.uj.edu.pl/en_GB/pracownik/-/pracownik/andrzej-odrzywolek) of Jagiellonian University published a breakthrough discovery: a single binary operator, **eml(x, y) = exp(x) - ln(y)**, is a **continuous Sheffer primitive**—the "NAND gate" of continuous mathematics. 
 
 In this post, we prove that this operator suffices for the entire vocabulary of modern deep learning. By EML-ifying the transformer, we solve "multiplicative fragility" (NaNs) and provide a "Zero-Sorry" formal stack in **Lean 4**, **Gappa**, and **TLA+**.
 
@@ -28,7 +28,7 @@ The EML-native model "clicks" into 100% generalization in under 60 seconds on an
 
 ## 1. The Discovery: Reconstructing the Vocabulary
 
-Odrzywołek's work established $\{eml, 1\}$ as functionally complete for univariate real functions. We have extended this to the tensor-valued layers of GPT-2, Gemma 4, and Nemotron 3.
+Odrzywołek's work established \{eml, 1\} as functionally complete for univariate real functions. We have extended this to the tensor-valued layers of GPT-2, Gemma 4, and Nemotron 3.
 
 ### The Core Math in Python
 Every layer (ReLU, GELU, Softmax, LayerNorm) is rewritten as a bounded-depth tree of `eml`.
@@ -54,7 +54,7 @@ Using Jay Mody's minimalist [picoGPT](https://github.com/jaymody/picoGPT), we re
 ### 2.1 EML-native LayerNorm
 Standard LayerNorm is "additively fragile." We use **Newton-Schulz iterative refinement** to compute reciprocal square roots natively in EML.
 
-> **Step A: The Trick.** Newton-Schulz uses only multiplication and addition to refine an estimate of $1/\sqrt{x}$, avoiding the "division" operator entirely.
+> **Step A: The Trick.** Newton-Schulz uses only multiplication and addition to refine an estimate of 1/\sqrt{x}, avoiding the "division" operator entirely.
 > **Step B: The Practical Reality.** While we avoid division for formal verification, production implementations can "go back" to hardware FMAs once the error bounds are certified.
 
 <details>
@@ -156,9 +156,9 @@ Model checking completed. No error found.
 
 ---
 
-## Conclusion: Simplicity is All You Need
+## Conclusion: Deep Learning is Function( exp(x) - ln(y) )
 
-All deep neural networks can be expressed as a function of the single EML operator: **$f(x, y) = \exp(x) - \ln(y)$**. By reducing the entire vocabulary of AI to this single building block, we demonstrate that complex AI systems are built on a mathematical foundation much simpler than their massive computational graphs suggest.
+All deep neural networks can be expressed as a function of the single EML operator: **f(x, y) = exp(x) - ln(y)**. By reducing the entire vocabulary of AI to this single building block, we demonstrate that complex AI systems are built on a mathematical foundation much simpler than their massive computational graphs suggest.
 
 ---
 **Explore the complete proof suite:** [github.com/atveit/one-op](https://github.com/atveit/one-op)
