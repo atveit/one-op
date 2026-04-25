@@ -13,7 +13,7 @@ thumbnail: ./eml-hero.png
 
 ## TL;DR: Deep Learning = Exp minus Log
 
-In early 2026, Andrzej Odrzywołek published a breakthrough discovery: a single binary operator, **$eml(x, y) = \exp(x) - \ln(y)$**, is a continuous Sheffer primitive—functionally complete for all elementary real functions. In this post, we apply this to the frontier of AI:
+In early 2026, Andrzej Odrzywołek published a breakthrough discovery in his paper [**"All elementary functions from a single binary operator" (arXiv:2603.21852)**](https://arxiv.org/abs/2603.21852): a single binary operator, **$eml(x, y) = \exp(x) - \ln(y)$**, is a continuous Sheffer primitive—functionally complete for all elementary real functions. In this post, we apply this to the frontier of AI:
 
 - 🧱 **Universal Unification:** Every layer (Softmax, GELU, LayerNorm) is now a bounded-depth tree of `eml`.
 - 🎯 **Total Stability:** We solve "multiplicative fragility" by moving attention to the **Min-Plus (Log-domain)** space.
@@ -55,7 +55,7 @@ Every activation (ReLU, GELU), every norm (LayerNorm, RMSNorm), and every attent
 
 ## 2. Main Example: picoGPT (GPT-2) \"EML Everywhere\"
 
-We have rewritten Jay Mody's minimalist [picoGPT](https://github.com/jaymody/picoGPT) using nothing but `eml` and the constant `1`. This allows for a "Zero-Sorry" audit of the entire architecture.
+We have rewritten Jay Mody's minimalist [picoGPT](https://github.com/jaymody/picoGPT) using nothing but `eml` and the constant `1`. This allows for a \"Zero-Sorry\" audit of the entire architecture.
 
 ### 2.1 EML-native LayerNorm (Iterative Refinement)
 Standard LayerNorm is \"additively fragile\" because it relies on `1/sqrt(variance)`. We solve this by using **Newton-Schulz iterative refinement**.
@@ -209,3 +209,8 @@ By reducing the entire vocabulary of AI to a single Sheffer primitive, we demons
 ---
 
 **Explore the complete proof suite:** [github.com/atveit/one-op](https://github.com/atveit/one-op)
+
+## Related Reads
+1. [**All elementary functions from a single binary operator**](https://arxiv.org/abs/2603.21852) - Andrzej Odrzywołek (2026)
+2. [picoGPT](https://github.com/jaymody/picoGPT) - Jay Mody
+3. [The Lean 4 Theorem Prover](https://lean-lang.org/)
