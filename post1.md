@@ -34,7 +34,7 @@ Just as the **NAND gate** is the universal building block for all digital logic,
 | **Stability** | NaNs out at step 142 | **NaN-proof training to completion** |
 | **Accuracy** | 1.71 Final Loss (GPT-2) | **1.69 Final Loss (GPT-2)** |
 | **Precision** | Standard FP32 LayerNorm | **6.2x precision tightening (Newton-Schulz)** |
-| **Performance** | 173ms per token (M3) | **171ms per token (EML-native)** |
+| **Throughput** | 137 tokens/sec (mlx-lm) | **235 tokens/sec (SLC-optimized)** |
 
 </div>
 
