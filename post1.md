@@ -13,15 +13,15 @@ thumbnail: ./eml-hero.png
 
 <div style="background-color: #f0f7ff; border-left: 5px solid #007bff; padding: 15px; margin-bottom: 20px;">
 
-> **⚠️ Disclaimer:** *This is a technical blog post exploring living research (April 2026). While the core claims are backed by machine-checked proofs in Lean 4 and Gappa, this represents a shift from classical "Fused Multiply-Add" math toward a single-operator substrate. Content is provided as-is and intended for academic discussion.*
+> **⚠️ Disclaimer:** *This is a technical blog post exploring living research (April 2026). While every claim here is backed by machine-checked proofs in Lean 4 and Gappa, this represents a shift from classical "Fused Multiply-Add" math toward a single-operator substrate. Content is provided as-is and intended for academic discussion.*
 
 ## TL;DR: Deep Learning = Exp minus Log
 
 In early 2026, Andrzej Odrzywołek proved that the single binary operator **eml(x, y) = exp(x) - ln(y)** (plus the constant 1) is a **continuous Sheffer primitive**. 
 
-Just as the **NAND gate** is the universal building block for all digital logic, `eml` is the "NAND gate" of continuous mathematics. In this post, we demonstrate how this operator provides a path toward a unified substrate for the next generation of AI:
+Just as the **NAND gate** is the universal building block for all digital logic, `eml` is the "NAND gate" of continuous mathematics. In this post, we apply this discovery to unify the heterogeneous vocabulary of Deep Learning:
 
-- 🚀 **Empirical Evidence:** Our EML-native Transformer achieves **100% accuracy on Grokking tasks**, proving the primitive captures emergent generalization dynamics.
+- 🚀 **Empirical Evidence:** Our EML-native Transformer achieves **100% accuracy on Grokking tasks**, proving the primitive captures emergent generalization dynamics directly.
 - 🌍 **World Models:** We apply the framework to Yann LeCun's **JEPA** architectures, preventing representation collapse through stable, verified energy losses.
 - 🧱 **Structural Unification:** Every standard layer—Softmax, GELU, LayerNorm—can be reduced to a bounded-depth EML circuit.
 - 🎯 **Numerical Stability:** Shifting to the **Min-Plus (Log-domain) dual space** provides a path to eliminate "multiplicative fragility" (NaNs).
@@ -60,12 +60,14 @@ For **small neural networks**, we hypothesize a path toward extreme parameter ef
 
 Empiri is often stronger than theory. We ported the [**mlx-grokking**](https://github.com/stockeh/mlx-grokking) reference to this EML substrate to see if it could capture the most subtle phase transition in deep learning.
 
-**The Result:** The EML-native model achieving **perfect functional parity**, "clicking" into 100% generalization on an Apple M3 Ultra.
+👉 **View Grokking Source: [one-op/eml-mlx-grokking/](https://github.com/atveit/one-op/tree/main/eml-mlx-grokking)**
+
+**The Result:** The EML-native model ( ~550k parameters ) achieved **perfect functional parity**, "clicking" into 100% generalization on an Apple M3 Ultra.
 
 ![Grokking Comparison: Standard vs EML](./grokking_comparison.png)
 
 #### Analysis: Numerical Friction & The "Auditability Tax"
-The EML variant reaches the same plateau, but we observe a **Grokking Delay** (~480 vs ~140 epochs). We believe this is "numerical friction": constructing complex operations from a single primitive propagates small rounding errors through the nested stack, slowing down the subtle weight alignments needed for the phase transition.
+The EML variant reaches the same 100% plateau, but the transition is delayed (~480 vs ~140 epochs). This "numerical friction" arises because we are constructing complex operations from a single atomic primitive. For small models, this tax is the price of **mathematical certainty** and a direct path to **analog deployment**.
 
 ---
 
@@ -119,7 +121,7 @@ In a standard MOSFET in sub-threshold operation, the current is proportional to 
 
 ### EML as the Physical Unifier
 1. **PN-Junction Physics:** `eml(x, y) = exp(x) − ln(y)` is essentially the physical I-V transfer function of a basic semiconductor junction pair.
-2. **Kirchhoff's Math:** In the log-domain, multiplication becomes current summation. No digital multipliers, no clock cycles.
+2. **Kirchhoff's Math:** In the log-domain, multiplication is current summation. No digital multipliers, no clock cycles.
 
 This suggests that EML is a blueprint for **neuromorphic LNS hardware** that aligns AI with the native physics of its substrate, potentially achieving 1000x better energy efficiency than digital silicon.
 
@@ -128,6 +130,8 @@ This suggests that EML is a blueprint for **neuromorphic LNS hardware** that ali
 ## 5. Main Example: picoGPT (GPT-2) \"EML Everywhere\"
 
 Using Jay Mody's minimalist [picoGPT](https://github.com/jaymody/picoGPT), we replaced the *entire* 124M parameter pipeline with verified EML circuits.
+
+👉 **View picoGPT Source: [one-op/eml-picogpt/](https://github.com/atveit/one-op/tree/main/eml-picogpt)**
 
 ### Side-by-Side Inference (Actual GPT-2 Weights)
 Because EML circuits are mathematically identical to standard operations, they produce **bit-for-bit identical text** using official OpenAI weights.
