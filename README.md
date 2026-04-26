@@ -16,13 +16,13 @@ This repository provides the "Zero-Sorry" formalization and empirical evidence f
 
 | Layer | Component | Verification Tool | Resource Path |
 | :--- | :--- | :--- | :--- |
-| **Foundations** | Functional Universality | 🧮 Lean 4 | `lean/EmlNN/Basic.lean` |
-| **Architecture** | Full picoGPT (GPT-2) | 🧮 Lean 4 | `lean/EmlNN/PicoGPT.lean` |
-| **World Models** | JEPA / VICReg Stability | 🚀 Apple MLX | `scripts/jepa/` |
-| **Empiri** | Grokking Phase Transitions | 🚀 Apple MLX | `eml-mlx-grokking/` |
-| **Stability** | LayerNorm (Newton-Schulz) | 🧮 Lean 4 | `lean/EmlNN/NormNewtonSchulz.lean` |
-| **Numerics** | FP32 Error Bounds | 🛡️ Gappa | `proofs/gappa/` |
-| **Concurrency** | KV-Cache Safety | ⏱️ TLA+ | `proofs/tla+/` |
+| **Foundations** | Functional Universality | 🧮 Lean 4 | [**`lean/EmlNN/Basic.lean`**](./lean/EmlNN/Basic.lean) |
+| **Architecture** | Full picoGPT (GPT-2) | 🧮 Lean 4 | [**`lean/EmlNN/PicoGPT.lean`**](./lean/EmlNN/PicoGPT.lean) |
+| **World Models** | JEPA / VICReg Stability | 🚀 Apple MLX | [**`scripts/jepa/`**](./scripts/jepa/) |
+| **Empiri** | Grokking Phase Transitions | 🚀 Apple MLX | [**`eml-mlx-grokking/`**](./eml-mlx-grokking/) |
+| **Stability** | LayerNorm (Newton-Schulz) | 🧮 Lean 4 | [**`lean/EmlNN/NormNewtonSchulz.lean`**](./lean/EmlNN/NormNewtonSchulz.lean) |
+| **Numerics** | FP32 Error Bounds | 🛡️ Gappa | [**`proofs/gappa/`**](./proofs/gappa/) |
+| **Concurrency** | KV-Cache Safety | ⏱️ TLA+ | [**`proofs/tla+/`**](./proofs/tla+/) |
 
 ---
 
