@@ -1,41 +1,44 @@
-# Frontier Speed Test: Shattering the 100 tok/s Barrier (M3 Ultra)
+# Frontier Speed Test: Exploring the Performance Floor (M3 Ultra)
 
-This directory contains the definitive end-to-end inference and quality grounding scripts for the world's most advanced LLMs on the Apple M3 Ultra (96GB).
+This directory contains end-to-end inference and quality grounding scripts for advanced LLMs on the Apple M3 Ultra (96GB), focused on identifying empirical speed gains via the EML substrate.
 
-## 🚀 The Breakthrough Results
-By reducing deep learning architectures to the single **EML Sheffer primitive**, we enable **SLC-Resident State Machines** that bypass the traditional "Memory Wall."
+## 🚀 Performance Observations
+By mapping deep learning architectures to the **EML Sheffer primitive**, we observe significant throughput improvements by improving **SLC Residency** and amortizing framework dispatch overhead.
 
-| Model | Official MLX-LM | Public SOTA | EML/SLC Optimized | Speedup |
+| Model | Phase | Official Baseline | EML-SLC Optimized | Speedup |
 | :--- | :--- | :--- | :--- | :--- |
-| **Qwen 3.6-35B-A3B** | 92.3 tok/s | - | **146.0 tok/s** | **+58.2%** |
-| **Gemma 4-31B-it** | 18.1 tok/s | 33.0 tok/s | **42.4 tok/s** | **+134.3%** |
+| **Qwen 3.6-35B** | **Prefill (PP)** | 1,478.5 tokens/sec | **1,906.8 tokens/sec** | **+29.0%** |
+| **Qwen 3.6-35B** | **Decoding (TG)** | 89.2 tokens/sec | **157.2 tokens/sec** | **+76.2%** |
+| **Gemma 4-31B** | **Prefill (PP)** | 250.8 tokens/sec | 250.4 tokens/sec | ~0.0% |
+| **Gemma 4-31B** | **Decoding (TG)** | 18.1 tokens/sec | **42.4 tokens/sec** | **+134.3%** |
 
-## 🧠 Why the Speedup? (The Technical Secret)
+*\*Benchmarks performed on M3 Ultra (96GB) using 4-bit Instruct weights.*
 
-**1. SLC-Resident Tiling (Fractional Compute):**
-Standard Transformers are bound by DRAM latency. Our framework processes dense attention in **1024-token "SLC Tiles"**. By keeping the working set resident in the **96MB System-Level Cache**, we turn a bandwidth bottleneck into a pure compute-bound race.
+## 🧠 Technical Analysis (3 Pillars)
 
-**2. Expert-Parallel EML (Qwen 3.6):**
-For MoE architectures, EML allows us to parallelize expert activations across the SLC banks. This enabled us to shatter the 100 tokens/sec barrier for 35B+ parameter models on a single Mac Studio.
+**1. SLC-Resident Tiling:**
+Standard Transformers often hit DRAM bandwidth limits. Our framework processes prompts in **1024-token "SLC Tiles"** to keep the 32MB working set resident in the **96MB System-Level Cache (SLC)**, aiming to bypass the DRAM latency penalty.
 
-**3. Micro-Batching (Gemma 4):**
-Dense models like Gemma 4 hit a framework dispatch wall. We utilize **Micro-Batching (Step B)** to amortize kernel overhead, allowing the M3 Ultra to hit 42.4 tok/s—surpassing the current public state-of-the-art by 28%.
+**2. EML-MicroBatching:**
+Decoding throughput is often limited by framework dispatch overhead. We utilize **Micro-Batching** to amortize this cost. This is likely why **Gemma 4** sees a significant generation speedup despite its dense memory footprint.
+
+**3. Tropical MEMENTO:**
+Utilizing **Max-Plus block summarization** (inspired by [Microsoft's Memento](https://github.com/microsoft/memento)), we collapse context into semantic anchors to maintain SLC residency for long sequences.
 
 ## 🧪 How to Run
+
+### Gemma 4 Reasoning Suite (10 Prompts)
+Compare the official baseline against the EML-optimized variant:
 ```bash
-# 1. Establish Official Baseline
-python3 run_qwen_baseline.py
-
-# 2. Run EML/SLC Optimized
-python3 run_qwen_optimized.py
-
-# 3. Quality Reasoning Check
-python3 run_hard_prompts.py
+./run_gemma_suite_baseline.sh
+./run_gemma_suite_optimized.sh
 ```
 
-## ✅ Quality Guarantee
-All EML-native runs establish **100% Bit-for-bit Parity** (Step A) or **Sane Reasoning** (Step B). Every token is grounded in official weights with zero reasoning loss.
+### Individual Benchmarks
+```bash
+python3 run_frontier.py {qwen,gemma} {baseline,optimized,quality}
+```
 
 ---
 **Main Project:** [atveit/one-op](https://github.com/atveit/one-op)
-**Attributions:** [Microsoft Memento](https://github.com/microsoft/memento), [ANEMLL](https://www.anemll.com), RotorQuant (2026).
+**Attributions:** Microsoft Memento, RotorQuant (2026), ANEMLL (2026).

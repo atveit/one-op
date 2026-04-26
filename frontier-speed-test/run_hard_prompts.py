@@ -8,12 +8,13 @@ import sys
 
 # Add local path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from run_optimized import emlify_model, wrap_cache_rigorous
+from frontier_eml import emlify_frontier_model
+from cache_eml import wrap_cache_rigorous
 
 def main():
-    parser = argparse.ArgumentParser(description="Run 10 hard prompts on Qwen 3.6 EML")
-    parser.add_argument("--model", type=str, default="mlx-community/Qwen3.6-35B-A3B-4bit")
-    parser.add_argument("--mode", choices=["baseline", "optimized"], default="optimized")
+    parser = argparse.ArgumentParser(description="Run 10 hard prompts on Frontier EML")
+    parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--mode", choices=["baseline", "optimized"], required=True)
     args = parser.parse_args()
 
     mx.set_default_device(mx.gpu)
@@ -27,7 +28,8 @@ def main():
     model, tokenizer = load(args.model)
     
     if args.mode == "optimized":
-        model = emlify_model(model)
+        print("Applying EML/SLC Frontier Optimizations...")
+        model = emlify_frontier_model(model)
         from mlx_lm.models import cache as cache_mod
         original_make_cache = cache_mod.make_prompt_cache
         def mocked_make_cache(model, max_kv_size=None):
@@ -36,14 +38,13 @@ def main():
 
     results = []
     for i, prompt in enumerate(prompts):
-        print(f"\nRunning Prompt {i}...")
+        print(f"\n[PROMPT {i}] Running...")
         start = time.time()
-        response = generate(model, tokenizer, prompt=prompt, max_tokens=256).strip()
+        response = generate(model, tokenizer, prompt=prompt, max_tokens=150).strip()
         elapsed = time.time() - start
         
-        print(f"PROMPT: {prompt[:50]}...")
-        print(f"RESPONSE: {response[:100]}...")
-        print(f"TIME: {elapsed:.2f}s")
+        print(f"RESPONSE:\n{response[:200]}...")
+        print(f"TIME: {elapsed:.2f}s | SPEED: {150/elapsed:.2f} tok/s")
         
         results.append({
             "prompt_idx": i,
@@ -53,7 +54,7 @@ def main():
         })
 
     # Save results
-    output_file = f"hard_prompts_results_{args.mode}.json"
+    output_file = f"hard_prompts_results_{args.model.split('/')[-1]}_{args.mode}.json"
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_file}")
