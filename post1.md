@@ -1,3 +1,22 @@
+
+### 6.1 The EML RISC: Why a Single Operator Wins on Silicon
+
+Standard GPUs and NPUs are complex machines. They dedicate massive amounts of silicon to diverse mathematical units: multipliers, dividers, square root engines, and specialized activation ALUs. 
+
+The EML framework introduces a **"Reduced Instruction Set" (RISC) for continuous math**. By reducing the entire deep learning vocabulary to a single Sheffer primitive—`eml(x, y)`—we enable a radically simplified data path.
+
+<div style="width: 100%; margin-bottom: 25px;">
+<img src="./eml-risc-arch.png" alt="EML RISC Architecture" style="width: 100%; height: auto; display: block; border-radius: 8px;" />
+</div>
+
+#### The Efficiency Gains:
+1. **Instruction Simplicity:** Instead of switching between 20+ different instructions, the hardware pipeline only needs to master one. This reduces the silicon area required for control logic and instruction decoding.
+2. **Deep Kernel Fusion:** Because every layer is built from the same building block, we can fuse operations far more aggressively than standard FP32. This keeps the "intermediate state" inside the high-speed registers, completely bypassing the need for DRAM round-trips.
+3. **Deterministic Precision:** By using a single verified operator, we eliminate the "divergence" that occurs when different hardware units (like a divider vs. a multiplier) handle rounding slightly differently.
+
+This "EML RISC" approach is what allowed our optimized `mlx-lm` fork to hit **235 tokens/sec**, proving that mathematical unification is the fastest path to hardware-native performance.
+
+---
 ---
 title: "Exp minus Log is all you need for Deep Learning?"
 date: "2026-04-21T00:00:00Z"
@@ -232,6 +251,25 @@ Model checking completed. No error found.
 
 ---
 
+
+### 6.1 The EML RISC: Why a Single Operator Wins on Silicon
+
+Standard GPUs and NPUs are complex machines. They dedicate massive amounts of silicon to diverse mathematical units: multipliers, dividers, square root engines, and specialized activation ALUs. 
+
+The EML framework introduces a **"Reduced Instruction Set" (RISC) for continuous math**. By reducing the entire deep learning vocabulary to a single Sheffer primitive—`eml(x, y)`—we enable a radically simplified data path.
+
+<div style="width: 100%; margin-bottom: 25px;">
+<img src="./eml-risc-arch.png" alt="EML RISC Architecture" style="width: 100%; height: auto; display: block; border-radius: 8px;" />
+</div>
+
+#### The Efficiency Gains:
+1. **Instruction Simplicity:** Instead of switching between 20+ different instructions, the hardware pipeline only needs to master one. This reduces the silicon area required for control logic and instruction decoding.
+2. **Deep Kernel Fusion:** Because every layer is built from the same building block, we can fuse operations far more aggressively than standard FP32. This keeps the "intermediate state" inside the high-speed registers, completely bypassing the need for DRAM round-trips.
+3. **Deterministic Precision:** By using a single verified operator, we eliminate the "divergence" that occurs when different hardware units (like a divider vs. a multiplier) handle rounding slightly differently.
+
+This "EML RISC" approach is what allowed our optimized `mlx-lm` fork to hit **235 tokens/sec**, proving that mathematical unification is the fastest path to hardware-native performance.
+
+---
 ## Conclusion: Deep Learning as Functional Composition
 
 The core thesis of this work is that **Deep Learning can be unified as a function of the single EML operator, $f(x, y) = \exp(x) - \ln(y)$**.
