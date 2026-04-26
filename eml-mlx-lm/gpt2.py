@@ -2,7 +2,7 @@ import mlx.core as mx
 import mlx.nn as nn
 from dataclasses import dataclass
 from typing import Any, Optional
-from cache_eml import TropicalMementoCache
+from .cache_eml import TropicalMementoCache
 
 @dataclass
 class ModelArgs:
@@ -13,15 +13,12 @@ class ModelArgs:
     vocab_size: int = 50257
     layer_norm_epsilon: float = 1e-5
 
-# ---------------------------------------------------------------------------
-# EML-native Primitives (Full Parity)
-# ---------------------------------------------------------------------------
-
+# EML-native components for mlx-lm
 def eml_rms_norm_ns(x, weight, eps=1e-5):
-    # Proved equivalent to standard RMSNorm in EmlNN.Norm
+    # Newton-Schulz rsqrt
     rms_sq = mx.mean(mx.square(x), axis=-1, keepdims=True)
-    # Using EML Newton-Schulz for 1/sqrt(x)
-    rsqrt = mx.exp(-0.5 * mx.log(rms_sq + eps))
+    rsqrt = mx.exp(-0.5 * mx.log(rms_sq + eps)) # EML seed
+    # 3 iterations of refinement
     for _ in range(3):
         rsqrt = 0.5 * rsqrt * (3.0 - (rms_sq + eps) * rsqrt * rsqrt)
     return weight * x * rsqrt
@@ -44,15 +41,14 @@ class EMLAttention(nn.Module):
         values = values.reshape(B, L, self.n_head, -1).transpose(0, 2, 1, 3)
 
         if cache is not None:
-            # For 100% parity during verification, we fetch full cache
             keys, values = cache.update_and_fetch(keys, values)
 
-        # EML Min-Plus Log-domain Attention
+        # Min-Plus Log-domain Attention
         logits = (queries @ keys.transpose(0, 1, 3, 2)) * self.scale
         if mask is not None:
             logits += mask
         
-        # Soft-Tropical (Log-Sum-Exp) - Bit-for-bit parity with Softmax
+        # Soft-Tropical (Safe out-of-the-box)
         lse = mx.logsumexp(logits, axis=-1, keepdims=True)
         weights = mx.exp(logits - lse)
         
@@ -63,8 +59,8 @@ class TransformerBlock(nn.Module):
     def __init__(self, args: ModelArgs):
         super().__init__()
         self.attn = EMLAttention(args)
-        self.ln_1 = nn.LayerNorm(args.n_embd, eps=args.layer_norm_epsilon)
-        self.ln_2 = nn.LayerNorm(args.n_embd, eps=args.layer_norm_epsilon)
+        self.ln_1 = mx.ones((args.n_embd,))
+        self.ln_2 = mx.ones((args.n_embd,))
         self.mlp = nn.Sequential(
             nn.Linear(args.n_embd, 4 * args.n_embd),
             nn.GELU(),
@@ -72,9 +68,8 @@ class TransformerBlock(nn.Module):
         )
 
     def __call__(self, x, mask=None, cache=None):
-        # Apply EML components
-        x = x + self.attn(self.ln_1(x), mask, cache)
-        x = x + self.mlp(self.ln_2(x))
+        x = x + self.attn(eml_rms_norm_ns(x, self.ln_1), mask, cache)
+        x = x + self.mlp(eml_rms_norm_ns(x, self.ln_2))
         return x
 
 class GPT2EML(nn.Module):
@@ -83,7 +78,7 @@ class GPT2EML(nn.Module):
         self.wte = nn.Embedding(args.vocab_size, args.n_embd)
         self.wpe = nn.Embedding(args.n_ctx, args.n_embd)
         self.h = [TransformerBlock(args) for _ in range(args.n_layer)]
-        self.ln_f = nn.LayerNorm(args.n_embd, eps=args.layer_norm_epsilon)
+        self.ln_f = mx.ones((args.n_embd,))
 
     def __call__(self, inputs, cache=None):
         L = inputs.shape[1]
@@ -91,9 +86,9 @@ class GPT2EML(nn.Module):
         x += self.wpe(mx.arange(L))
         
         if cache is None:
-            cache = [None] * len(self.h)
+            cache = [TropicalMementoCache() for _ in range(len(self.h))]
             
         for layer, c in zip(self.h, cache):
             x = layer(x, cache=c)
             
-        return self.wte.as_linear(self.ln_f(x))
+        return self.wte.as_linear(eml_rms_norm_ns(x, self.ln_f))
