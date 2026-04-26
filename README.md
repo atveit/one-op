@@ -20,3 +20,10 @@ We have established empirical speed gains on the Apple M3 Ultra by improving SLC
 
 ---
 **Read the research series:** [amund.blog](https://amund.blog/finding-gemma4-performance-floor)
+
+## 🔮 Future Work
+We are currently exploring further optimizations without requiring retraining:
+- **dflash:** Low-latency speculative decoding.
+- **ddtree:** Distributed decision trees for sparse expert routing.
+- **Tri-Attention:** Spatial Trigonometric Pruning for extreme SLC residency.
+- **DeepSeek V4 Integration:** Leveraging lightning indexers for 1M+ token contexts.
