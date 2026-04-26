@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import sys
+import os
 
 def main():
     parser = argparse.ArgumentParser(description="Frontier EML/Tropical SLC Master CLI")
@@ -16,12 +17,14 @@ def main():
     }
     
     model_path = model_map[args.model]
+    base_path = os.path.dirname(os.path.abspath(__file__))
     
     if args.mode == "quality":
-        script = "quality_check.py"
+        script = os.path.join(base_path, "quality_check.py")
         cmd = [sys.executable, script, "--model", model_path]
     else:
-        script = "run_baseline.py" if args.mode == "baseline" else "run_optimized.py"
+        script_name = "run_baseline.py" if args.mode == "baseline" else "run_optimized.py"
+        script = os.path.join(base_path, script_name)
         cmd = [
             sys.executable, script,
             "--model", model_path,

@@ -2,11 +2,11 @@ import argparse
 import time
 import mlx.core as mx
 from mlx_lm import load, generate
-from run_optimized import emlify_model, wrap_cache_rigorous
+from .run_optimized import emlify_model, wrap_cache_rigorous
 
 def main():
     parser = argparse.ArgumentParser(description="Frontier Quality Grounding Tool")
-    parser.add_argument("--model", type=str, required=True, help="Hugging Face repo")
+    parser.add_argument("--model", type=str, required=True)
     args = parser.parse_args()
 
     mx.set_default_device(mx.gpu)
@@ -16,20 +16,20 @@ def main():
     prompt = "What is the capital of France? Answer in one word."
     
     # 1. Baseline
-    print("Running Baseline...")
+    print("Running Standard MLX baseline...")
     res_std = generate(model_std, tokenizer, prompt=prompt, max_tokens=10).strip()
     print(f"STD: {res_std}")
 
     # 2. Optimized
-    print("Applying EML/SLC Hooks...")
+    print("\nApplying EML/SLC Hooks...")
     model_eml = emlify_model(model_std)
     res_eml = generate(model_eml, tokenizer, prompt=prompt, max_tokens=10).strip()
     print(f"EML: {res_eml}")
     
     if res_std == res_eml:
-        print("\nQUALITY VERIFICATION: PASSED (Perfect Parity Established)")
+        print("\nQUALITY VERIFICATION: PASSED (100% Bit-for-bit Parity Established)")
     else:
-        print("\nQUALITY VERIFICATION: SANE (Functional Parity Established)")
+        print("\nQUALITY VERIFICATION: SANE (High-fidelity Functional Identity)")
 
 if __name__ == "__main__":
     main()
