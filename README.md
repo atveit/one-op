@@ -1,9 +1,9 @@
 # one-op: Continuous Sheffer Primitives for Deep Learning
 
-This repository contains machine-checked proofs and empirical evidence for the **Exp-minus-Log (EML)** unified substrate.
+This repository contains the machine-checked proofs and empirical evidence for the **Exp-minus-Log (EML)** unified substrate.
 
 ## 🚀 Frontier Speed Test (M3 Ultra)
-We have established record-breaking performance on the Apple M3 Ultra by bypassing the "Memory Wall" using EML and Tropical math.
+We have established empirical speed gains on the Apple M3 Ultra by improving SLC residency and amortizing framework overhead using EML and Tropical math.
 
 📂 **[frontier-speed-test/](./frontier-speed-test/)**: Direct CLI tools to compare standard MLX against EML-native SLC-optimized inference for **Qwen 3.6-35B** and **Gemma 4-31B**.
 
@@ -19,4 +19,4 @@ We have established record-breaking performance on the Apple M3 Ultra by bypassi
 - **Hardware Native:** Aligns with PN-junction physics for next-gen analog LNS hardware.
 
 ---
-**Read the research series:** [amund.blog](https://amund.blog/exp-minus-log-is-all-you-need)
+**Read the research series:** [amund.blog](https://amund.blog/finding-gemma4-performance-floor)
