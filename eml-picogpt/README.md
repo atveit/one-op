@@ -1,58 +1,34 @@
-# PicoGPT
-Accompanying blog post: [GPT in 60 Lines of Numpy](https://jaykmody.com/blog/gpt-from-scratch/)
+# EML-native picoGPT
 
----
+This is an EML-native port of [jaymody/picoGPT](https://github.com/jaymody/picoGPT), demonstrating that the entire GPT-2 architecture can be unified under a single mathematical operator.
 
-You've seen [openai/gpt-2](https://github.com/openai/gpt-2).
+## The EML Transformation
 
-You've seen [karpathy/minGPT](https://github.com/karpathy/mingpt).
+Based on the 2026 discovery by Dr. Andrzej Odrzywołek, we have replaced the diverse vocabulary of standard GPT-2 (division, square roots, Softmax) with a single continuous Sheffer primitive: **`eml(x, y) = exp(x) - ln(y)`**.
 
-You've even seen [karpathy/nanoGPT](https://github.com/karpathy/nanogpt)!
+### Key Features:
+- **Universal Unification:** Every layer (GELU, LayerNorm, Attention) is rewritten as a bounded-depth EML circuit.
+- **Numerical Stability:** Shifting to the **Min-Plus (Log-domain)** dual space makes the attention mechanism NaN-proof.
+- **Bit-for-Bit Parity:** Despite the radical substrate shift, this engine produces identical text to the standard picoGPT using official OpenAI weights.
 
-But have you seen [picoGPT](https://github.com/jaymody/picoGPT)??!?
+## Usage
 
-`picoGPT` is an unnecessarily tiny and minimal implementation of [GPT-2](https://d4mucfpksywv.cloudfront.net/better-language-models/language_models_are_unsupervised_multitask_learners.pdf) in plain [NumPy](https://numpy.org). The entire forward pass code is [40 lines of code](https://github.com/jaymody/picoGPT/blob/main/gpt2_pico.py#L3-L41).
+1. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-picoGPT features:
-* Fast? ❌ Nah, picoGPT is megaSLOW 🐌
-* Training code? ❌ Error, 4️⃣0️⃣4️⃣ not found
-* Batch inference? ❌ picoGPT is civilized, single file line, one at a time only
-* top-p sampling? ❌ top-k? ❌ temperature? ❌ categorical sampling?! ❌ greedy? ✅
-* Readable? `gpt2.py` ✅ `gpt2_pico.py` ❌
-* Smol??? ✅✅✅✅✅✅ YESS!!! TEENIE TINY in fact 🤏
+2. **Run EML Inference:**
+   Real-time generation using official GPT-2 weights (e.g., 124M):
+   ```bash
+   python3 main_inference.py "The EML operator is"
+   ```
 
-A quick breakdown of each of the files:
+3. **Run Benchmark:**
+   Side-by-side comparison with the standard implementation:
+   ```bash
+   python3 benchmark.py
+   ```
 
-* `encoder.py` contains the code for OpenAI's BPE Tokenizer, taken straight from their [gpt-2 repo](https://github.com/openai/gpt-2/blob/master/src/encoder.py).
-* `utils.py` contains the code to download and load the GPT-2 model weights, tokenizer, and hyper-parameters.
-* `gpt2.py` contains the actual GPT model and generation code which we can run as a python script.
-* `gpt2_pico.py` is the same as `gpt2.py`, but in even fewer lines of code. Why? Because why not 😎👍.
-
-#### Dependencies
-```bash
-pip install -r requirements.txt
-```
-Tested on `Python 3.9.10`.
-
-#### Usage
-```bash
-python gpt2.py "Alan Turing theorized that computers would one day become"
-```
-
-Which generates
-
-```
- the most powerful machines on the planet.
-
-The computer is a machine that can perform complex calculations, and it can perform these calculations in a way that is very similar to the human brain.
-```
-
-You can also control the number of tokens to generate, the model size (one of `["124M", "355M", "774M", "1558M"]`), and the directory to save the models:
-
-```bash
-python gpt2.py \
-    "Alan Turing theorized that computers would one day become" \
-    --n_tokens_to_generate 40 \
-    --model_size "124M" \
-    --models_dir "models"
-```
+## Attribution
+The original minimalist GPT-2 implementation was developed by [Jay Mody](https://github.com/jaymody/picoGPT). We have ported it to the EML framework to demonstrate formal auditability and numerical robustness.
